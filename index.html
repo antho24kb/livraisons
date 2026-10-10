@@ -121,7 +121,7 @@ ul.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;ga
 
 /* Recherche */
 input[type=text],input[type=date],input[type=search],select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;min-width:0;min-height:44px}
-.themes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.themes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .themes label{position:relative;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:600;color:var(--ink)}
 .themes input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
 .themes span{display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;padding:8px 6px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
@@ -269,8 +269,7 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
     <div class="set-sec">
       <span class="lbl" id="lbl-theme">Apparence</span>
       <div class="themes" role="radiogroup" aria-labelledby="lbl-theme">
-        <label><input type="radio" name="theme" value="auto" checked><span>Comme l'iPhone</span></label>
-        <label><input type="radio" name="theme" value="light"><span>Clair</span></label>
+        <label><input type="radio" name="theme" value="light" checked><span>Clair</span></label>
         <label><input type="radio" name="theme" value="dark"><span>Sombre</span></label>
       </div>
     </div>
@@ -559,7 +558,8 @@ $('nav-avenir').addEventListener('click',function(){setTab('avenir')});
 $('nav-recues').addEventListener('click',function(){setTab('recues')});
 /* Réglages et thème */
 var THEME_KEY='livraisons-theme';
-function getTheme(){try{var t=localStorage.getItem(THEME_KEY);return (t==='light'||t==='dark')?t:'auto'}catch(e){return 'auto'}}
+function getTheme(){try{var t=localStorage.getItem(THEME_KEY);if(t==='light'||t==='dark') return t}catch(e){}return 'auto'}
+function effectiveTheme(){var t=getTheme();if(t!=='auto') return t;return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}
 function applyTheme(t){
   var root=document.documentElement;
   if(t==='light'||t==='dark') root.setAttribute('data-theme',t); else root.removeAttribute('data-theme');
@@ -567,7 +567,7 @@ function applyTheme(t){
   var m=document.querySelector('meta[name="theme-color"]');if(m) m.setAttribute('content',dark?'#0F131A':'#2848D6');
 }
 function openSettings(){
-  var t=getTheme();
+  var t=effectiveTheme();
   Array.prototype.forEach.call(document.querySelectorAll('input[name=theme]'),function(r){r.checked=(r.value===t)});
   lastFocus=document.activeElement;$('set-overlay').hidden=false;
   setTimeout(function(){var r=document.querySelector('input[name=theme]:checked');if(r) r.focus()},50);
