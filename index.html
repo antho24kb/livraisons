@@ -260,6 +260,14 @@ a.cl:active{filter:brightness(.92)}
 .row.late,:root[data-theme="dark"] .row.late{box-shadow:var(--card-sh)}
 .group-h.late{color:var(--ink)}
 .row.late .when.late{font-weight:600}
+
+/* ===== Sombre : Matrix ===== */
+#rain{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:none;opacity:.55}
+:root[data-theme="dark"] #rain{display:block}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #rain{display:block}}
+.wrap{position:relative;z-index:1}
+:root[data-theme="dark"] .btn.warn{color:#fff;border-color:rgba(255,255,255,.85);background:rgba(255,255,255,.08)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.warn{color:#fff;border-color:rgba(255,255,255,.85);background:rgba(255,255,255,.08)}}
 </style>
 </head>
 <body>
@@ -375,6 +383,7 @@ a.cl:active{filter:brightness(.92)}
     </div>
   </div>
 </div>
+<canvas id="rain" aria-hidden="true"></canvas>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -751,6 +760,40 @@ Array.prototype.forEach.call(document.querySelectorAll('input[name=theme]'),func
 });
 if(window.matchMedia){try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getTheme()==='auto') applyTheme('auto')})}catch(e){}}
 applyTheme(getTheme());
+
+/* Pluie Matrix (thème sombre) */
+(function(){
+  var cv=document.getElementById('rain');if(!cv||!cv.getContext) return;
+  var cx=cv.getContext('2d'),cols=[],fs=16,W=0,H=0,timer=null,last=0;
+  var CH='ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉ0123456789'.split('');
+  function isDark(){var t=document.documentElement.getAttribute('data-theme');if(t) return t==='dark';return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)}
+  function size(){var d=Math.min(window.devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);var n=Math.ceil(W/fs);cols=[];for(var i=0;i<n;i++) cols.push(Math.random()*H/fs)}
+  function still(){cx.clearRect(0,0,W,H);cx.font=fs+'px monospace';for(var i=0;i<cols.length;i++){for(var j=0;j<6;j++){cx.fillStyle='rgba(0,255,65,'+(0.08+0.1*j)+')';cx.fillText(CH[(i*7+j*3)%CH.length],i*fs,((i*13)%40+j)*fs)}}}
+  function frame(t){
+    timer=null;if(!isDark()||document.hidden) return;
+    if(t-last>55){last=t;
+      cx.fillStyle='rgba(3,9,5,.12)';cx.globalCompositeOperation='destination-out';cx.fillRect(0,0,W,H);cx.globalCompositeOperation='source-over';
+      cx.font=fs+'px monospace';
+      for(var i=0;i<cols.length;i++){
+        cx.fillStyle='rgba(0,255,65,.85)';cx.fillText(CH[(Math.random()*CH.length)|0],i*fs,cols[i]*fs);
+        if(cols[i]*fs>H&&Math.random()>.975) cols[i]=0;cols[i]+=1;
+      }
+    }
+    timer=requestAnimationFrame(frame);
+  }
+  function update(){
+    if(timer){cancelAnimationFrame(timer);timer=null}
+    if(!isDark()) return;
+    size();
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){still();return}
+    timer=requestAnimationFrame(frame);
+  }
+  window.addEventListener('resize',function(){if(isDark()) update()});
+  document.addEventListener('visibilitychange',update);
+  try{new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})}catch(e){}
+  try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',update)}catch(e){}
+  update();
+})();
 
 $('list').addEventListener('click',function(e){
   var b=e.target.closest('button[data-action]');
