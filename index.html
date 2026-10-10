@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#00A843">
+<meta name="theme-color" content="#030905">
+<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Colizy">
@@ -409,13 +410,6 @@ html:not(.lt) .row{background:rgba(10,21,14,.78);-webkit-backdrop-filter:blur(8p
       <button type="button" class="btn ghost" id="set-close">Fermer</button>
     </div>
     <div class="set-sec">
-      <span class="lbl" id="lbl-theme">Apparence</span>
-      <div class="themes" role="radiogroup" aria-labelledby="lbl-theme">
-        <label><input type="radio" name="theme" value="light" checked><span>Clair</span></label>
-        <label><input type="radio" name="theme" value="dark"><span>Sombre</span></label>
-      </div>
-    </div>
-    <div class="set-sec">
       <span class="lbl">Notifications</span>
       <button type="button" class="btn" id="push-btn">Activer les notifications push</button>
       <p class="set-who" id="push-note"></p>
@@ -730,8 +724,8 @@ $('nav-avenir').addEventListener('click',function(){setTab('avenir')});
 $('nav-recues').addEventListener('click',function(){setTab('recues')});
 /* Réglages et thème */
 var THEME_KEY='livraisons-theme';
-function getTheme(){try{var t=localStorage.getItem(THEME_KEY);if(t==='light'||t==='dark') return t}catch(e){}return 'auto'}
-function effectiveTheme(){var t=getTheme();if(t!=='auto') return t;return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}
+function getTheme(){return 'dark'}
+function effectiveTheme(){return 'dark'}
 function applyTheme(t){
   var root=document.documentElement;
   if(t==='light'||t==='dark') root.setAttribute('data-theme',t); else root.removeAttribute('data-theme');
@@ -739,10 +733,8 @@ function applyTheme(t){
   var m=document.querySelector('meta[name="theme-color"]');if(m) m.setAttribute('content',dark?'#030905':'#00A843');
 }
 function openSettings(){
-  var t=effectiveTheme();
-  Array.prototype.forEach.call(document.querySelectorAll('input[name=theme]'),function(r){r.checked=(r.value===t)});
   lastFocus=document.activeElement;$('set-overlay').hidden=false;
-  setTimeout(function(){var r=document.querySelector('input[name=theme]:checked');if(r) r.focus()},50);
+  setTimeout(function(){var r=$('push-btn');if(r&&!r.hidden) r.focus()},50);
 }
 function closeSettings(){$('set-overlay').hidden=true;if(lastFocus&&lastFocus.focus){try{lastFocus.focus()}catch(e){}}}
 
@@ -804,7 +796,7 @@ Array.prototype.forEach.call(document.querySelectorAll('input[name=theme]'),func
   r.addEventListener('change',function(){try{localStorage.setItem(THEME_KEY,r.value)}catch(e){}applyTheme(r.value)});
 });
 if(window.matchMedia){try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getTheme()==='auto') applyTheme('auto')})}catch(e){}}
-applyTheme(getTheme());
+document.documentElement.setAttribute('data-theme','dark');
 
 
 /* Titre : les lettres défilent comme dans Matrix, puis se fixent */
