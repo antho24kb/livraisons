@@ -770,7 +770,7 @@ applyTheme(getTheme());
 /* Titre : les lettres défilent comme dans Matrix, puis se fixent */
 (function(){
   var el=document.getElementById('title');if(!el) return;
-  var CH='ｱｲｳｴｵｶｷｸｹｺｻｼｽ01ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),busy=false;
+  var CH='COLIZYcolizy'.split(''),busy=false;
   function dark(){var t=document.documentElement.getAttribute('data-theme');if(t) return t==='dark';return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)}
   function run(){
     if(busy||!dark()||document.hidden) return;
