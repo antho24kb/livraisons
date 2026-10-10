@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Colizy">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
+<link rel="icon" type="image/png" href="icons/icon-192.png?v=2">
 <title>Colizy</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
@@ -175,7 +175,7 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B0F16;--surface:#151A24;--line:#232B3A;--card-sh:0 1px 0 rgba(255,255,255,.03) inset,0 6px 16px rgba(0,0,0,.35)}}
 body{padding-top:calc(14px + env(safe-area-inset-top))}
 .wrap>h1{font-size:1.55rem;letter-spacing:.06em;display:flex;align-items:center;gap:10px}
-.wrap>h1::before{content:"";width:30px;height:30px;border-radius:9px;background:url(icons/icon-192.png) center/cover}
+.wrap>h1::before{content:"";width:30px;height:30px;border-radius:9px;background:url(icons/icon-192.png?v=2) center/cover}
 .alert{border:0;border-left:4px solid var(--late);border-radius:12px;padding:12px 14px;font-size:.95rem}
 .group-h{font-size:.9rem}
 .row{border:0;border-radius:var(--r);box-shadow:var(--card-sh);padding:16px 14px;gap:8px 12px}
@@ -263,8 +263,9 @@ a.cl:active{filter:brightness(.92)}
 
 /* ===== Sombre : Matrix ===== */
 #rain{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:none;opacity:.42}
+:root #rain{display:block}:root[data-theme="light"] #rain{opacity:.28}
 :root[data-theme="dark"] #rain{display:block}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #rain{display:block}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #rain{display:block;opacity:.42}}
 .wrap{position:relative;z-index:1}
 :root[data-theme="dark"] .btn.warn{color:#fff;border-color:rgba(255,255,255,.85);background:rgba(255,255,255,.08)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.warn{color:#fff;border-color:rgba(255,255,255,.85);background:rgba(255,255,255,.08)}}
@@ -273,6 +274,10 @@ a.cl:active{filter:brightness(.92)}
 :root[data-theme="dark"] #title{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.9),0 0 18px rgba(0,255,65,.8),0 0 34px rgba(0,255,65,.45)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #title{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.9),0 0 18px rgba(0,255,65,.8),0 0 34px rgba(0,255,65,.45)}}
 #title{font-variant-numeric:tabular-nums;cursor:default}
+
+/* ===== Clair : titre et pluie discrets ===== */
+:root[data-theme="light"] #title{color:#0B1F12;text-shadow:0 0 18px rgba(0,168,67,.25)}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) #title{color:#0B1F12;text-shadow:0 0 18px rgba(0,168,67,.25)}}
 </style>
 </head>
 <body>
@@ -350,7 +355,7 @@ a.cl:active{filter:brightness(.92)}
 </div>
 <div class="auth" id="auth">
   <form class="auth-card" id="auth-form" autocomplete="on">
-    <img src="icons/icon-192.png" alt="" width="84" height="84">
+    <img src="icons/icon-192.png?v=2" alt="" width="84" height="84">
     <h1>Colizy</h1>
     <p class="sub" id="auth-sub">Connecte-toi pour retrouver tes colis.</p>
     <div class="field"><label for="a-email">E-mail</label><input type="email" id="a-email" autocomplete="email" required></div>
@@ -773,7 +778,7 @@ applyTheme(getTheme());
   var CH='COLIZYcolizy'.split(''),busy=false;
   function dark(){var t=document.documentElement.getAttribute('data-theme');if(t) return t==='dark';return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)}
   function run(){
-    if(busy||!dark()||document.hidden) return;
+    if(busy||document.hidden) return;
     if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var txt=el.textContent;if(txt!=='Colizy') return;
     busy=true;var n=txt.length,start=Date.now();
@@ -799,15 +804,16 @@ applyTheme(getTheme());
   function pick(i){var n=nums();seq[i]=n[(Math.random()*n.length)|0];pos[i]=0}
   var CH='0123456789'.split('');
   function isDark(){var t=document.documentElement.getAttribute('data-theme');if(t) return t==='dark';return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)}
+  function rgb(){return isDark()?'0,255,65':'0,140,55'}
   function size(){var d=Math.min(window.devicePixelRatio||1,2);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);var n=Math.ceil(W/fs);cols=[];cols=[];seq=[];pos=[];for(var i=0;i<n;i++){cols.push(Math.random()*H/fs);pick(i)}}
-  function still(){cx.clearRect(0,0,W,H);cx.font=fs+'px monospace';for(var i=0;i<cols.length;i++){for(var j=0;j<6;j++){cx.fillStyle='rgba(0,255,65,'+(0.08+0.1*j)+')';cx.fillText(seq[i].charAt(j%seq[i].length),i*fs,((i*13)%40+j)*fs)}}}
+  function still(){cx.clearRect(0,0,W,H);cx.font=fs+'px monospace';for(var i=0;i<cols.length;i++){for(var j=0;j<6;j++){cx.fillStyle='rgba('+rgb()+','+(0.08+0.1*j)+')';cx.fillText(seq[i].charAt(j%seq[i].length),i*fs,((i*13)%40+j)*fs)}}}
   function frame(t){
-    timer=null;if(!isDark()||document.hidden) return;
+    timer=null;if(document.hidden) return;
     if(t-last>55){last=t;
       cx.fillStyle='rgba(3,9,5,.12)';cx.globalCompositeOperation='destination-out';cx.fillRect(0,0,W,H);cx.globalCompositeOperation='source-over';
       cx.font=fs+'px monospace';
       for(var i=0;i<cols.length;i++){
-        cx.fillStyle='rgba(0,255,65,.85)';cx.fillText(seq[i].charAt(pos[i]%seq[i].length),i*fs,cols[i]*fs);pos[i]++;
+        cx.fillStyle='rgba('+rgb()+',.85)';cx.fillText(seq[i].charAt(pos[i]%seq[i].length),i*fs,cols[i]*fs);pos[i]++;
         if(cols[i]*fs>H&&Math.random()>.975){cols[i]=0;pick(i)}cols[i]+=1;
       }
     }
@@ -815,12 +821,11 @@ applyTheme(getTheme());
   }
   function update(){
     if(timer){cancelAnimationFrame(timer);timer=null}
-    if(!isDark()) return;
     size();
     if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){still();return}
     timer=requestAnimationFrame(frame);
   }
-  window.addEventListener('resize',function(){if(isDark()) update()});
+  window.addEventListener('resize',update);
   document.addEventListener('visibilitychange',update);
   try{new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})}catch(e){}
   try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',update)}catch(e){}
