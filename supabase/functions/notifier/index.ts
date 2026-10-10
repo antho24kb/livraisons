@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: { Authorization: `Bearer ${Deno.env.get('RESEND_KEY')}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: 'Livraisons <onboarding@resend.dev>',
+            from: 'Colizy <onboarding@resend.dev>',
             to: [Deno.env.get('MAIL_TO')],
             subject: `${c.article} ${MSG[k]}`,
             text: `${c.article} ${MSG[k]}\n\nOuvre l'appli : https://antho24kb.github.io/livraisons/`,
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ title: 'Livraisons', body: `${c.article} ${MSG[k]}`, tag: c.id }),
+          JSON.stringify({ title: 'Colizy', body: `${c.article} ${MSG[k]}`, tag: c.id }),
         );
         envoyes++;
       } catch (e) {

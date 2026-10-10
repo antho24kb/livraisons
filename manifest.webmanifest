@@ -1,6 +1,6 @@
 {
-  "name": "Mes livraisons",
-  "short_name": "Livraisons",
+  "name": "Colizy",
+  "short_name": "Colizy",
   "lang": "fr",
   "start_url": "./index.html",
   "scope": "./",

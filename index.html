@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#0A5CFF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Livraisons">
+<meta name="apple-mobile-web-app-title" content="Colizy">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<title>Mes livraisons</title>
+<title>Colizy</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <style>
@@ -243,7 +243,7 @@ a.cl:active{filter:brightness(.92)}
 </head>
 <body>
 <div class="wrap">
-  <h1 id="title">Mes livraisons</h1>
+  <h1 id="title">Colizy</h1>
   <section id="summary" aria-live="polite"></section>
   <div id="list" style="display:flex;flex-direction:column;gap:18px"></div>
   <div class="account" id="account" hidden><button type="button" class="btn ghost" id="refresh">Actualiser le suivi</button></div>
@@ -317,7 +317,7 @@ a.cl:active{filter:brightness(.92)}
 <div class="auth" id="auth">
   <form class="auth-card" id="auth-form" autocomplete="on">
     <img src="icons/icon-192.png" alt="" width="84" height="84">
-    <h1>Mes livraisons</h1>
+    <h1>Colizy</h1>
     <p class="sub" id="auth-sub">Connecte-toi pour retrouver tes colis.</p>
     <div class="field"><label for="a-email">E-mail</label><input type="email" id="a-email" autocomplete="email" required></div>
     <div class="field"><label for="a-pass">Mot de passe</label><input type="password" id="a-pass" autocomplete="current-password" minlength="6" required></div>
@@ -449,7 +449,7 @@ function renderNav(){
   });
   var n=loaded?items.filter(function(i){return !i.recu}).length:0;
   var bd=$('n-avenir');bd.textContent=n;bd.hidden=!n;
-  $('title').textContent=tab==='recues'?'Reçues':'Mes livraisons';
+  $('title').textContent=tab==='recues'?'Reçues':'Colizy';
 }
 function renderBoutiques(){
   var seen={},out=[];
