@@ -37,6 +37,14 @@
     color-scheme:dark;
   }
 }
+:root[data-theme="dark"]{
+  --bg:#0F131A; --surface:#171C26; --ink:#E8ECF4; --muted:#98A2B5; --line:#2A3242;
+  --accent:#8CA2FF; --accent-ink:#0F131A; --tint:#232B3A;
+  --warn:#FFA85C; --warn-tint:#3D2610; --late:#FF8F7E; --late-tint:#3A1E1B; --ok:#5FD39B; --ok-tint:#14301F;
+  --shadow:0 6px 20px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+:root[data-theme="light"]{color-scheme:light}
 *,*::before,*::after{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;
@@ -113,7 +121,14 @@ ul.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;ga
 
 /* Recherche */
 input[type=text],input[type=date],input[type=search],select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;min-width:0;min-height:44px}
-.searchbar input{background:var(--surface)}
+.themes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.themes label{position:relative;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:600;color:var(--ink)}
+.themes input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.themes span{display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;padding:8px 6px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.themes input:checked + span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.themes input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.set-sec{display:flex;flex-direction:column;gap:8px}
+.set-who{font-size:.95rem;color:var(--muted);overflow-wrap:anywhere}
 input::placeholder{color:var(--muted);opacity:.8}
 
 /* Barre du bas + bouton + */
@@ -162,11 +177,8 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
 <div class="wrap">
   <h1 id="title">Mes livraisons</h1>
   <section id="summary" aria-live="polite"></section>
-  <div id="searchbar" class="searchbar" hidden>
-    <input type="search" id="q" placeholder="Rechercher (article, boutique, suivi…)" aria-label="Rechercher une livraison" autocomplete="off">
-  </div>
   <div id="list" style="display:flex;flex-direction:column;gap:18px"></div>
-  <div class="account" id="account" hidden><span id="who"></span><span><button type="button" class="btn ghost" id="refresh">Actualiser le suivi</button><button type="button" class="btn ghost" id="logout">Se déconnecter</button></span></div>
+  <div class="account" id="account" hidden><button type="button" class="btn ghost" id="refresh">Actualiser le suivi</button></div>
 </div>
 
 <button type="button" class="fab" id="fab" aria-label="Ajouter une livraison">
@@ -183,9 +195,9 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/></svg>
       Reçues
     </button>
-    <button type="button" id="nav-recherche">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      Recherche
+    <button type="button" id="nav-reglages" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      Réglages
     </button>
   </div>
 </nav>
@@ -247,6 +259,27 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
     <button type="button" class="linkbtn" id="a-switch">Pas de compte ? Créer un compte</button>
     <button type="button" class="linkbtn" id="a-forgot">Mot de passe oublié ?</button>
   </form>
+</div>
+<div class="overlay" id="set-overlay" hidden>
+  <div class="sheet" id="settings" role="dialog" aria-modal="true" aria-labelledby="set-title">
+    <div class="sheet-h">
+      <h2 id="set-title">Réglages</h2>
+      <button type="button" class="btn ghost" id="set-close">Fermer</button>
+    </div>
+    <div class="set-sec">
+      <span class="lbl" id="lbl-theme">Apparence</span>
+      <div class="themes" role="radiogroup" aria-labelledby="lbl-theme">
+        <label><input type="radio" name="theme" value="auto" checked><span>Comme l'iPhone</span></label>
+        <label><input type="radio" name="theme" value="light"><span>Clair</span></label>
+        <label><input type="radio" name="theme" value="dark"><span>Sombre</span></label>
+      </div>
+    </div>
+    <div class="set-sec">
+      <span class="lbl">Compte</span>
+      <p class="set-who" id="who"></p>
+      <button type="button" class="btn danger" id="logout">Se déconnecter</button>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 
@@ -329,29 +362,21 @@ function msg(text){
 /* Rendu */
 function renderSummary(){
   var el=$('summary');
-  if(tab==='recherche'){el.innerHTML='';return}
-  if(!loaded){el.innerHTML='<div class="hero empty"><p>Chargement…</p></div>';return}
+  if(!loaded){el.innerHTML='';return}
   var p=pending();
-  if(!p.length){el.innerHTML='<div class="hero empty"><p>Aucune livraison en attente. Appuie sur « + » pour en ajouter une.</p></div>';return}
-  var n=p[0],d=diff(n.date);
   var lateN=p.filter(function(i){return diff(i.date)<0}).length;
   var todayN=p.filter(function(i){return diff(i.date)===0}).length;
-  el.innerHTML='<div class="hero"><p class="eyebrow">Prochaine livraison</p>'
-    +'<p class="next-name">'+esc(n.article)+'</p>'
-    +'<p class="next-when">'+esc(cap(fLong.format(parseDay(n.date))))+' · '+rel(d)+'</p>'
-    +'<p class="totals">'+p.length+' en attente</p></div>'
-    +(lateN?'<p class="alert" style="margin-top:10px">'+lateN+' livraison'+(lateN>1?'s':'')+' en retard : vérifie le suivi ou contacte la boutique.</p>':'')
+  el.innerHTML=(lateN?'<p class="alert">'+lateN+' livraison'+(lateN>1?'s':'')+' en retard : vérifie le suivi ou contacte la boutique.</p>':'')
     +(todayN?'<p class="note" style="margin-top:8px">'+todayN+' attendue'+(todayN>1?'s':'')+" aujourd'hui.</p>":'');
 }
 function renderNav(){
-  ['avenir','recues','recherche'].forEach(function(t){
+  ['avenir','recues'].forEach(function(t){
     var b=$('nav-'+t);
     if(t===tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
   });
   var n=loaded?items.filter(function(i){return !i.recu}).length:0;
   var bd=$('n-avenir');bd.textContent=n;bd.hidden=!n;
-  $('title').textContent=tab==='recues'?'Reçues':(tab==='recherche'?'Recherche':'Mes livraisons');
-  $('searchbar').hidden=(tab!=='recherche');
+  $('title').textContent=tab==='recues'?'Reçues':'Mes livraisons';
 }
 function renderBoutiques(){
   var seen={},out=[];
@@ -429,10 +454,6 @@ function renderList(){
     var r=received();
     if(!r.length){el.innerHTML='<div class="empty-box"><strong>Rien de reçu pour l\'instant.</strong><br>Les livraisons marquées « Reçu » arrivent ici.</div>';return}
     el.innerHTML='<p class="note">'+r.length+' reçue'+(r.length>1?'s':'')+'</p><section class="group"><ul class="rows">'+r.map(rowHtml).join('')+'</ul></section>';
-  } else {
-    var all=items.filter(matches).sort(byDate);
-    if(!all.length){el.innerHTML='<div class="empty-box">'+(query?'<strong>Aucun résultat.</strong><br>Essaie un autre mot.':'Tape un nom d\'article, une boutique ou un numéro de suivi.')+'</div>';return}
-    el.innerHTML='<section class="group"><ul class="rows">'+all.map(rowHtml).join('')+'</ul></section>';
   }
 }
 function render(){
@@ -533,11 +554,34 @@ $('form').addEventListener('submit',function(e){
   render();
   p.then(function(){toast(wasEdit?'Modifications enregistrées':'Livraison ajoutée')}).catch(fail);
 });
-function setTab(t){tab=t;menuId=null;confirmId=null;if(t!=='recherche'){query='';$('q').value=''}render();if(t==='recherche') setTimeout(function(){$('q').focus()},50);window.scrollTo(0,0)}
+function setTab(t){tab=t;menuId=null;confirmId=null;render();window.scrollTo(0,0)}
 $('nav-avenir').addEventListener('click',function(){setTab('avenir')});
 $('nav-recues').addEventListener('click',function(){setTab('recues')});
-$('nav-recherche').addEventListener('click',function(){setTab('recherche')});
-$('q').addEventListener('input',function(e){query=e.target.value.trim();renderList()});
+/* Réglages et thème */
+var THEME_KEY='livraisons-theme';
+function getTheme(){try{var t=localStorage.getItem(THEME_KEY);return (t==='light'||t==='dark')?t:'auto'}catch(e){return 'auto'}}
+function applyTheme(t){
+  var root=document.documentElement;
+  if(t==='light'||t==='dark') root.setAttribute('data-theme',t); else root.removeAttribute('data-theme');
+  var dark=(t==='dark')||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  var m=document.querySelector('meta[name="theme-color"]');if(m) m.setAttribute('content',dark?'#0F131A':'#2848D6');
+}
+function openSettings(){
+  var t=getTheme();
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=theme]'),function(r){r.checked=(r.value===t)});
+  lastFocus=document.activeElement;$('set-overlay').hidden=false;
+  setTimeout(function(){var r=document.querySelector('input[name=theme]:checked');if(r) r.focus()},50);
+}
+function closeSettings(){$('set-overlay').hidden=true;if(lastFocus&&lastFocus.focus){try{lastFocus.focus()}catch(e){}}}
+$('nav-reglages').addEventListener('click',openSettings);
+$('set-close').addEventListener('click',closeSettings);
+$('set-overlay').addEventListener('click',function(e){if(e.target===$('set-overlay')) closeSettings()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('set-overlay').hidden) closeSettings()});
+Array.prototype.forEach.call(document.querySelectorAll('input[name=theme]'),function(r){
+  r.addEventListener('change',function(){try{localStorage.setItem(THEME_KEY,r.value)}catch(e){}applyTheme(r.value)});
+});
+if(window.matchMedia){try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getTheme()==='auto') applyTheme('auto')})}catch(e){}}
+applyTheme(getTheme());
 
 $('list').addEventListener('click',function(e){
   var b=e.target.closest('button[data-action]');
@@ -598,7 +642,7 @@ $('auth-form').addEventListener('submit',function(e){
   });
 });
 $('refresh').addEventListener('click',function(){toast('Mise à jour du suivi…');refreshTracking(true)});
-$('logout').addEventListener('click',function(){sb.auth.signOut()});
+$('logout').addEventListener('click',function(){closeSettings();sb.auth.signOut()});
 
 function onSession(session){
   if(session&&session.user){
