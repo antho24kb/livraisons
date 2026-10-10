@@ -324,6 +324,19 @@ html:not(.lt) .row{background:rgba(10,21,14,.78);-webkit-backdrop-filter:blur(8p
 .pw-form{display:flex;flex-direction:column;gap:8px}
 .pw-form[hidden]{display:none}
 .sheet{max-height:90vh}
+
+/* ===== Connexion Matrix ===== */
+body:has(#auth:not([hidden])) .wrap,body:has(#auth:not([hidden])) .nav,body:has(#auth:not([hidden])) .fab{visibility:hidden}
+.auth{background:radial-gradient(70% 45% at 50% 40%,rgba(0,255,65,.10),transparent 70%)!important}
+.auth-card{background:rgba(6,16,10,.62)!important;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(0,255,65,.32);box-shadow:0 0 0 1px rgba(0,255,65,.06),0 0 40px rgba(0,255,65,.14)!important;padding:26px 20px!important;border-radius:24px}
+.auth-card img{box-shadow:0 0 28px rgba(0,255,65,.5)!important}
+.auth-card h1{color:#fff;text-shadow:0 0 16px rgba(0,255,65,.6)}
+.hello{text-align:center;font-size:1.25rem;font-weight:600;color:#7dffa0;text-shadow:0 0 12px rgba(0,255,65,.55);min-height:1.6em;margin:-4px 0 0;letter-spacing:.01em;transition:opacity .35s}
+.hello.out{opacity:0}
+.auth-card input{background:rgba(0,0,0,.45)!important;border-color:rgba(0,255,65,.25)!important;color:#fff}
+.auth-card input:focus{outline:none;border-color:#00ff41!important;box-shadow:0 0 0 3px rgba(0,255,65,.18)}
+.auth-card .btn.primary{background:#fff;border-color:#fff;color:#031a0a;font-weight:700;box-shadow:0 0 22px rgba(255,255,255,.25)}
+.auth-card .linkbtn{color:#7dffa0;text-decoration:none}
 </style>
 </head>
 <body>
@@ -403,6 +416,7 @@ html:not(.lt) .row{background:rgba(10,21,14,.78);-webkit-backdrop-filter:blur(8p
   <form class="auth-card" id="auth-form" autocomplete="on">
     <img src="icons/icon-192.png?v=2" alt="" width="84" height="84">
     <h1>Colizy</h1>
+    <p class="hello" id="hello" aria-hidden="true">Bonjour</p>
     <p class="sub" id="auth-sub">Connecte-toi pour retrouver tes colis.</p>
     <div class="field"><label for="a-email">E-mail</label><input type="email" id="a-email" autocomplete="email" required></div>
     <div class="field"><label for="a-pass">Mot de passe</label><input type="password" id="a-pass" autocomplete="current-password" minlength="6" required></div>
@@ -1027,6 +1041,19 @@ function init(){
 }
 init();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+})();
+</script>
+<script>
+(function(){
+  var L=['Bonjour','Hello','Hola','Ciao','Hallo','Olá','Hej','Merhaba','こんにちは','안녕하세요','你好','Привет','مرحبا','नमस्ते','Γεια σου','Ahoj','Cześć','Shalom','Salaam','Jambo','Kia ora','Aloha'];
+  var el=document.getElementById('hello');if(!el) return;
+  var i=0,rm=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(rm) return;
+  setInterval(function(){
+    var a=document.getElementById('auth');if(!a||a.hidden||document.hidden) return;
+    el.classList.add('out');
+    setTimeout(function(){i=(i+1)%L.length;el.textContent=L[i];el.classList.remove('out')},350);
+  },1800);
 })();
 </script>
 </body>
