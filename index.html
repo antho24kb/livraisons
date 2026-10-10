@@ -226,6 +226,17 @@ h1,.wrap>h1,.auth-card h1{text-transform:none;letter-spacing:-.03em;font-weight:
 .chip:not(:has(img)){padding-left:10px}
 .chip .lg{width:18px;height:18px;border-radius:50%;background:#fff;object-fit:contain;flex:none}
 .track{font-size:.8rem;color:var(--muted)}
+
+/* ===== Carte simplifiée ===== */
+.cl{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px 0 4px;border-radius:999px;background:var(--tint);color:var(--accent);text-decoration:none;font-size:.8rem;font-weight:600}
+.cl .lg{width:22px;height:22px;border-radius:50%;background:#fff;object-fit:contain;flex:none}
+.cl .cn{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cl.txt{padding-left:10px}.cl.txt .cn{position:static;width:auto;height:auto;clip:auto}
+.cl .go{font-size:.85rem;opacity:.8}
+a.cl:active{filter:brightness(.92)}
+.ev{margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prog-l span{display:none}
+.prog-l{justify-content:flex-start}
 </style>
 </head>
 <body>
@@ -451,7 +462,7 @@ function progressHtml(it){
   return '<div class="prog" role="img" aria-label="Statut : '+STEPS[idx]+'"><div class="segs">'+segs+'</div>'
     +'<div class="prog-l"><b>'+STEPS[idx]+'</b><span>'+(idx<3?'Étape '+(idx+1)+' sur 4':'Terminé')+'</span></div></div>';
 }
-var SHOPS=[['fnac','fnac.com'],['amazon','amazon.fr'],['cdiscount','cdiscount.com'],['micromania','micromania.fr'],['vinted','vinted.fr'],['ebay','ebay.fr'],['leclerc','e.leclerc'],['carrefour','carrefour.fr'],['boulanger','boulanger.com'],['darty','darty.com'],['auchan','auchan.fr'],['zavvi','zavvi.com'],['gamestop','gamestop.fr'],['rakuten','fr.shopping.rakuten.com'],['cultura','cultura.com'],['steelbook','steelbook.fr']];
+var SHOPS=[['fnac','fnac.com'],['sephora','sephora.fr'],['nocibe','nocibe.fr'],['zalando','zalando.fr'],['ikea','ikea.com'],['decathlon','decathlon.fr'],['apple','apple.com'],['temu','temu.com'],['aliexpress','aliexpress.com'],['amazon','amazon.fr'],['cdiscount','cdiscount.com'],['micromania','micromania.fr'],['vinted','vinted.fr'],['ebay','ebay.fr'],['leclerc','e.leclerc'],['carrefour','carrefour.fr'],['boulanger','boulanger.com'],['darty','darty.com'],['auchan','auchan.fr'],['zavvi','zavvi.com'],['gamestop','gamestop.fr'],['rakuten','fr.shopping.rakuten.com'],['cultura','cultura.com'],['steelbook','steelbook.fr']];
 var CDOM={colissimo:'laposte.fr',chronopost:'chronopost.fr',mondial:'mondialrelay.fr',ups:'ups.com',dhl:'dhl.com',fedex:'fedex.com',amazon:'amazon.fr',vintedgo:'vinted.fr'};
 function shopDom(n){n=(n||'').toLowerCase();for(var i=0;i<SHOPS.length;i++){if(n.indexOf(SHOPS[i][0])>-1) return SHOPS[i][1]}return ''}
 function chip(label,dom){
@@ -466,8 +477,14 @@ function rowHtml(it){
   var bits=[];
   if(it.boutique) bits.push(chip(it.boutique,shopDom(it.boutique)));
   var cn=(CARRIERS[it.transporteur||'']||{}).n;
-  if(it.transporteur&&cn) bits.push(chip(cn,CDOM[it.transporteur]||''));
-  if(it.suivi) bits.push('<span class="track">'+esc(it.suivi)+'</span>');
+  if(it.transporteur&&cn){
+    var tu0=it.suivi?trackUrl(it):null,cd=CDOM[it.transporteur]||'';
+    var ci=cd?'<img class="lg" alt="" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(cd)+'&sz=64" onerror="this.parentNode.classList.add(\'txt\');this.remove()">':'';
+    var inner=ci+'<span class="cn">'+esc(cn)+'</span>';
+    bits.push(tu0
+      ? '<a class="cl" href="'+esc(tu0)+'" target="_blank" rel="noopener noreferrer" aria-label="Suivre le colis avec '+esc(cn)+'" title="Suivre le colis">'+inner+'<span class="go" aria-hidden="true">↗</span></a>'
+      : '<span class="cl">'+inner+'</span>');
+  }
   if(bits.length) meta.push(bits.join(''));
   var when=done
     ? (it.recuLe?'Reçu le '+esc(noDot(fShort.format(parseDay(it.recuLe)))):'Reçu')
@@ -482,8 +499,7 @@ function rowHtml(it){
     actions='<div class="actions">'
       +(done
         ? '<button type="button" class="btn" data-action="undo" data-id="'+id+'">Remettre en attente</button>'
-        : (tu?'<a class="btn link" href="'+esc(tu)+'" target="_blank" rel="noopener noreferrer">Suivre</a>':'')
-          +'<button type="button" class="btn ok" data-action="recu" data-id="'+id+'">Reçu</button>'
+        : '<button type="button" class="btn ok" data-action="recu" data-id="'+id+'">Reçu</button>'
           +(it.suivi?'':'<button type="button" class="btn warn" data-action="addsuivi" data-id="'+id+'">Ajouter suivi</button>'))
       +'<button type="button" class="btn ghost more" data-action="menu" data-id="'+id+'" aria-label="Plus d\'actions" aria-expanded="'+(menuId===it.id)+'">⋯</button></div>';
     if(menuId===it.id){
@@ -498,7 +514,7 @@ function rowHtml(it){
     +'<div class="date" aria-hidden="true"><span class="w">'+esc(noDot(fWeek.format(dt)))+'</span><span class="d">'+dt.getDate()+'</span><span class="m">'+esc(noDot(fMonth.format(dt)))+'</span></div>'
     +'<div class="main"><div class="name">'+esc(it.article)+'</div><div class="meta">'+meta.join('')+'</div>'
     +'<div class="when '+(done?'':(d<0?'late':(d===0?'today':'')))+'" style="margin-top:4px">'+when+'</div>'
-    +(it.evenement?'<div class="when" style="margin-top:2px">📍 '+esc(it.evenement)+'</div>':'')+'</div>'
+    +(it.evenement&&!done?'<div class="when ev">'+esc(String(it.evenement).split(' · ')[0])+'</div>':'')+'</div>'
     +'<div class="price'+(typeof it.prix==='number'?'':' none')+'">'+(typeof it.prix==='number'?eur.format(it.prix):'—')+'</div>'
     +(done?'':progressHtml(it))
     +actions
