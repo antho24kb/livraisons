@@ -291,6 +291,28 @@ body{position:relative}
 .lt .group-h.late{color:#25523A}
 .lt .nav{background:rgba(255,255,255,.82);border-top:1px solid rgba(0,150,60,.18)}
 .lt .fab{background:linear-gradient(135deg,#00C853,#008F3A);box-shadow:0 8px 22px rgba(0,168,67,.45)}
+
+/* ===== Fond Matrix : grille, lueurs, balayage, vignette, cartes en verre ===== */
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none}
+.lt body{background:
+  radial-gradient(60% 38% at 92% 12%,rgba(0,200,83,.26),transparent 70%),
+  radial-gradient(55% 34% at 0% 52%,rgba(0,168,67,.18),transparent 70%),
+  radial-gradient(65% 40% at 100% 96%,rgba(0,255,65,.22),transparent 70%),
+  linear-gradient(rgba(0,120,50,.08) 1px,transparent 1px) 0 0/28px 28px,
+  linear-gradient(90deg,rgba(0,120,50,.08) 1px,transparent 1px) 0 0/28px 28px,
+  linear-gradient(180deg,#DFF1E7,#EEF7F2 45%,#D8EEDF)}
+.lt body::after{background:repeating-linear-gradient(0deg,rgba(0,70,30,.045) 0,rgba(0,70,30,.045) 1px,transparent 1px,transparent 3px)}
+html:not(.lt) body{background:
+  radial-gradient(70% 36% at 50% 100%,rgba(0,255,65,.16),transparent 70%),
+  radial-gradient(50% 30% at 100% 20%,rgba(0,255,65,.07),transparent 70%),
+  linear-gradient(rgba(0,255,65,.045) 1px,transparent 1px) 0 0/30px 30px,
+  linear-gradient(90deg,rgba(0,255,65,.045) 1px,transparent 1px) 0 0/30px 30px,
+  #030905}
+html:not(.lt) body::after{background:
+  radial-gradient(120% 90% at 50% 45%,transparent 52%,rgba(0,0,0,.6)),
+  repeating-linear-gradient(0deg,rgba(0,255,65,.035) 0,rgba(0,255,65,.035) 1px,transparent 1px,transparent 3px)}
+.lt .row{background:rgba(255,255,255,.80);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+html:not(.lt) .row{background:rgba(10,21,14,.78);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 </style>
 </head>
 <body>
