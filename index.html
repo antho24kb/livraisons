@@ -274,6 +274,11 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
       </div>
     </div>
     <div class="set-sec">
+      <span class="lbl">Notifications</span>
+      <button type="button" class="btn" id="push-btn">Activer les notifications push</button>
+      <p class="set-who" id="push-note"></p>
+    </div>
+    <div class="set-sec">
       <span class="lbl">Compte</span>
       <p class="set-who" id="who"></p>
       <button type="button" class="btn danger" id="logout">Se déconnecter</button>
@@ -573,7 +578,43 @@ function openSettings(){
   setTimeout(function(){var r=document.querySelector('input[name=theme]:checked');if(r) r.focus()},50);
 }
 function closeSettings(){$('set-overlay').hidden=true;if(lastFocus&&lastFocus.focus){try{lastFocus.focus()}catch(e){}}}
-$('nav-reglages').addEventListener('click',openSettings);
+
+/* Notifications push */
+var VAPID_PUBLIC='BO-ghkZ-k55Mpond94s0Zqbxm8zvuvooH_nHhyzkVbilwL96EVa6oipv4VTgPCYWAYBSx0JvAXfXCn9bY8oaBSo';
+function b64u(s){var p='='.repeat((4-s.length%4)%4),b=(s+p).replace(/-/g,'+').replace(/_/g,'/'),r=atob(b),o=new Uint8Array(r.length);for(var i=0;i<r.length;i++)o[i]=r.charCodeAt(i);return o}
+function pushOK(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window}
+function standalone(){return window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)}
+function pushState(){
+  var b=$('push-btn'),n=$('push-note');
+  if(!pushOK()){b.hidden=true;n.textContent=standalone()?"Notifications non prises en charge sur cet appareil.":"Sur iPhone : ajoute d'abord l'appli à l'écran d'accueil (Partager > Sur l'écran d'accueil), puis ouvre-la depuis là.";return}
+  b.hidden=false;
+  navigator.serviceWorker.ready.then(function(r){return r.pushManager.getSubscription()}).then(function(sub){
+    var on=!!sub&&Notification.permission==='granted';
+    b.textContent=on?'Désactiver les notifications push':'Activer les notifications push';
+    b.setAttribute('data-on',on?'1':'0');
+    n.textContent=on?"Tu seras prévenu quand un colis est expédié, en livraison ou livré.":(Notification.permission==='denied'?"Bloquées : autorise-les dans Réglages iPhone > Notifications.":"");
+  }).catch(function(){});
+}
+$('push-btn').addEventListener('click',function(){
+  var b=$('push-btn');b.disabled=true;
+  var on=b.getAttribute('data-on')==='1';
+  navigator.serviceWorker.ready.then(function(reg){
+    if(on){
+      return reg.pushManager.getSubscription().then(function(sub){
+        if(!sub) return;
+        return sb.from('push_subs').delete().eq('endpoint',sub.endpoint).then(function(){return sub.unsubscribe()});
+      });
+    }
+    return Notification.requestPermission().then(function(p){
+      if(p!=='granted') throw new Error('refus');
+      return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUBLIC)});
+    }).then(function(sub){
+      var j=sub.toJSON();
+      return sb.from('push_subs').upsert({user_id:user.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:'endpoint'}).then(function(r){if(r.error) throw r.error});
+    });
+  }).then(function(){toast(on?'Notifications désactivées':'Notifications activées')}).catch(function(){toast("Activation impossible.")}).then(function(){b.disabled=false;pushState()});
+});
+$('nav-reglages').addEventListener('click',function(){openSettings();pushState()});
 $('set-close').addEventListener('click',closeSettings);
 $('set-overlay').addEventListener('click',function(e){if(e.target===$('set-overlay')) closeSettings()});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('set-overlay').hidden) closeSettings()});
