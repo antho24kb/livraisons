@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0A5CFF">
+<meta name="theme-color" content="#00A843">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Colizy">
@@ -239,6 +239,17 @@ a.cl:active{filter:brightness(.92)}
 .prog-l{justify-content:flex-start}
 
 .eta{margin-top:3px;font-weight:600;font-size:.92rem;color:var(--accent)}
+
+/* ===== Vert Matrix ===== */
+:root,:root[data-theme="light"]{--accent:#00A843;--accent-ink:#fff;--tint:#E3F7EA;--film:#00A843;--ok:#00A843;--ok-tint:#E3F7EA;--bg:#F1F6F3}
+:root[data-theme="dark"]{--bg:#030905;--surface:#0A150E;--line:#12301C;--ink:#D8FFE4;--muted:#6FAE85;--accent:#00FF41;--accent-ink:#021006;--tint:#0F2A18;--ok:#00FF41;--ok-tint:#0B2A14;--late:#FF6B6B;--late-tint:#2A1010;--card-sh:0 0 0 1px #12301C}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#030905;--surface:#0A150E;--line:#12301C;--ink:#D8FFE4;--muted:#6FAE85;--accent:#00FF41;--accent-ink:#021006;--tint:#0F2A18;--ok:#00FF41;--ok-tint:#0B2A14;--late:#FF6B6B;--late-tint:#2A1010;--card-sh:0 0 0 1px #12301C}}
+.fab{box-shadow:0 8px 22px rgba(0,168,67,.4)}
+.auth-card img{box-shadow:0 10px 24px rgba(0,168,67,.35)}
+:root[data-theme="dark"] .fab,:root[data-theme="dark"] .auth-card img{box-shadow:0 0 24px rgba(0,255,65,.45)}
+:root[data-theme="dark"] h1{text-shadow:0 0 14px rgba(0,255,65,.45)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .fab,:root:not([data-theme="light"]) .auth-card img{box-shadow:0 0 24px rgba(0,255,65,.45)}:root:not([data-theme="light"]) h1{text-shadow:0 0 14px rgba(0,255,65,.45)}}
+.auth{background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 70%),var(--bg)}
 </style>
 </head>
 <body>
@@ -661,7 +672,7 @@ function applyTheme(t){
   var root=document.documentElement;
   if(t==='light'||t==='dark') root.setAttribute('data-theme',t); else root.removeAttribute('data-theme');
   var dark=(t==='dark')||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
-  var m=document.querySelector('meta[name="theme-color"]');if(m) m.setAttribute('content',dark?'#0F131A':'#0A5CFF');
+  var m=document.querySelector('meta[name="theme-color"]');if(m) m.setAttribute('content',dark?'#030905':'#00A843');
 }
 function openSettings(){
   var t=effectiveTheme();
