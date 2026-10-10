@@ -21,7 +21,7 @@
 :root{
   --bg:#EDEFF3; --surface:#FFFFFF; --ink:#12161E; --muted:#596273; --line:#D9DDE5;
   --accent:#2848D6; --accent-ink:#FFFFFF; --tint:#E6EAF2;
-  --late:#B8301F; --late-tint:#FBE6E2; --ok:#1B7A4F; --ok-tint:#DDF2E7;
+  --warn:#B85400; --warn-tint:#FFEAD6; --late:#B8301F; --late-tint:#FBE6E2; --ok:#1B7A4F; --ok-tint:#DDF2E7;
   --steel:#46556B; --steel-tint:#E3E7EE; --game:#6B3FC4; --game-tint:#EBE3FA; --film:#2848D6; --film-tint:#E4E9FB;
   --shadow:0 6px 20px rgba(18,22,30,.22);
   --f-display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
@@ -31,7 +31,7 @@
   :root:not([data-theme="light"]){
     --bg:#0F131A; --surface:#171C26; --ink:#E8ECF4; --muted:#98A2B5; --line:#2A3242;
     --accent:#8CA2FF; --accent-ink:#0F131A; --tint:#232B3A;
-    --late:#FF8F7E; --late-tint:#3A1E1B; --ok:#5FD39B; --ok-tint:#14301F;
+    --warn:#FFA85C; --warn-tint:#3D2610; --late:#FF8F7E; --late-tint:#3A1E1B; --ok:#5FD39B; --ok-tint:#14301F;
     --steel:#A9B7CC; --steel-tint:#232B38; --game:#B99BFF; --game-tint:#2B2147; --film:#8CA2FF; --film-tint:#1E2850;
     --shadow:0 6px 20px rgba(0,0,0,.5);
     color-scheme:dark;
@@ -100,6 +100,7 @@ ul.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;ga
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);padding:12px 20px;font-size:1rem}
 .btn.primary:hover{filter:brightness(1.08);background:var(--accent)}
 .btn.ok{background:var(--ok-tint);border-color:var(--ok);color:var(--ok)}
+.btn.warn{background:var(--warn-tint);border-color:var(--warn);color:var(--warn)}
 .btn.link{color:var(--accent);border-color:var(--accent)}
 .btn.danger{color:var(--late);border-color:var(--late)}
 .btn.ghost{border-color:transparent;color:var(--muted)}
@@ -375,7 +376,6 @@ function rowHtml(it){
   var cn=(CARRIERS[it.transporteur||'']||{}).n;
   if(it.transporteur&&cn) bits.push(esc(cn));
   if(it.suivi) bits.push('<span class="track">'+esc(it.suivi)+'</span>');
-  else if(!done) bits.push('<span>Suivi à ajouter</span>');
   if(bits.length) meta.push('<span>'+bits.join(' · ')+'</span>');
   var when=done
     ? (it.recuLe?'Reçu le '+esc(noDot(fShort.format(parseDay(it.recuLe)))):'Reçu')
@@ -391,7 +391,8 @@ function rowHtml(it){
       +(done
         ? '<button type="button" class="btn" data-action="undo" data-id="'+id+'">Remettre en attente</button>'
         : (tu?'<a class="btn link" href="'+esc(tu)+'" target="_blank" rel="noopener noreferrer">Suivre</a>':'')
-          +'<button type="button" class="btn ok" data-action="recu" data-id="'+id+'">Reçu</button>')
+          +'<button type="button" class="btn ok" data-action="recu" data-id="'+id+'">Reçu</button>'
+          +(it.suivi?'':'<button type="button" class="btn warn" data-action="addsuivi" data-id="'+id+'">Ajouter suivi</button>'))
       +'<button type="button" class="btn ghost more" data-action="menu" data-id="'+id+'" aria-label="Plus d\'actions" aria-expanded="'+(menuId===it.id)+'">⋯</button></div>';
     if(menuId===it.id){
       var sk=it.statut||'commande';
@@ -548,6 +549,7 @@ $('list').addEventListener('click',function(e){
   else if(a==='next'){menuId=null;updateItem(id,{statut:KEYS[Math.min(2,KEYS.indexOf((it&&it.statut)||'commande')+1)]}).catch(fail);}
   else if(a==='menu'){menuId=(menuId===id?null:id);confirmId=null;render()}
   else if(a==='edit'){menuId=null;render();openSheet(it)}
+  else if(a==='addsuivi'){menuId=null;render();openSheet(it);setTimeout(function(){$('f-suivi').focus()},120)}
   else if(a==='del'){confirmId=id;menuId=null;render()}
   else if(a==='del-yes'){confirmId=null;removeItem(id).then(function(){toast('Livraison supprimée')}).catch(fail);}
   else if(a==='cancel'){confirmId=null;menuId=null;render()}
