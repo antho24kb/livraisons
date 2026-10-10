@@ -314,6 +314,16 @@ html:not(.lt) body::after{background:
   repeating-linear-gradient(0deg,rgba(0,255,65,.035) 0,rgba(0,255,65,.035) 1px,transparent 1px,transparent 3px)}
 .lt .row{background:rgba(255,255,255,.80);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 html:not(.lt) .row{background:rgba(10,21,14,.78);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+
+/* ===== Réglages détaillés ===== */
+.chk{display:flex;align-items:center;gap:12px;min-height:44px;font-size:1rem;color:var(--ink);text-transform:none;letter-spacing:0;font-weight:500}
+.chk input{width:22px;height:22px;accent-color:var(--accent);flex:none;margin:0}
+.set-sec select{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:auto;min-width:92px}
+.row2{display:flex;align-items:center;gap:10px;color:var(--muted)}
+.themes.four{grid-template-columns:repeat(4,1fr)}
+.pw-form{display:flex;flex-direction:column;gap:8px}
+.pw-form[hidden]{display:none}
+.sheet{max-height:90vh}
 </style>
 </head>
 <body>
@@ -416,9 +426,48 @@ html:not(.lt) .row{background:rgba(10,21,14,.78);-webkit-backdrop-filter:blur(8p
       <button type="button" class="btn" id="mail-btn" data-on="0">Activer les notifications par mail</button>
     </div>
     <div class="set-sec">
+      <span class="lbl">Me prévenir quand</span>
+      <label class="chk"><input type="checkbox" data-pref="alert_expedie"><span>Le colis est expédié</span></label>
+      <label class="chk"><input type="checkbox" data-pref="alert_livraison"><span>Il est en cours de livraison</span></label>
+      <label class="chk"><input type="checkbox" data-pref="alert_livre"><span>Il est livré</span></label>
+      <label class="chk"><input type="checkbox" data-pref="alert_retard"><span>Il est en retard</span></label>
+    </div>
+    <div class="set-sec">
+      <span class="lbl">Résumé du matin</span>
+      <label class="chk"><input type="checkbox" data-pref="matin_on"><span>Recevoir les colis du jour à</span></label>
+      <select data-pref="matin_h" aria-label="Heure du résumé"><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option></select>
+    </div>
+    <div class="set-sec">
+      <span class="lbl">Heures de silence</span>
+      <label class="chk"><input type="checkbox" data-pref="silence_on"><span>Pas de notification entre</span></label>
+      <div class="row2"><select data-pref="silence_debut" aria-label="Début"><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option><option value="0">00h</option><option value="1">01h</option><option value="2">02h</option></select><span>et</span><select data-pref="silence_fin" aria-label="Fin"><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option></select></div>
+      <p class="set-who">Les alertes reçues pendant le silence arrivent à la fin de la plage.</p>
+    </div>
+    <div class="set-sec">
+      <span class="lbl" id="lbl-rain">Pluie Matrix</span>
+      <div class="themes four" role="radiogroup" aria-labelledby="lbl-rain" id="rain-opts">
+        <label><input type="radio" name="rain" value="off"><span>Off</span></label>
+        <label><input type="radio" name="rain" value="soft"><span>Douce</span></label>
+        <label><input type="radio" name="rain" value="normal"><span>Normale</span></label>
+        <label><input type="radio" name="rain" value="strong"><span>Forte</span></label>
+      </div>
+    </div>
+    <div class="set-sec">
       <span class="lbl">Compte</span>
       <p class="set-who" id="who"></p>
+      <button type="button" class="btn" id="pw-open">Changer mon mot de passe</button>
+      <form id="pw-form" class="pw-form" hidden autocomplete="off">
+        <input type="password" id="pw1" placeholder="Nouveau mot de passe (8 caractères min.)" autocomplete="new-password" minlength="8">
+        <input type="password" id="pw2" placeholder="Répète le mot de passe" autocomplete="new-password" minlength="8">
+        <button type="submit" class="btn primary" id="pw-save">Enregistrer</button>
+        <p class="set-who" id="pw-msg" role="status"></p>
+      </form>
+      <button type="button" class="btn" id="invite">Inviter un ami</button>
       <button type="button" class="btn danger" id="logout">Se déconnecter</button>
+    </div>
+    <div class="set-sec">
+      <span class="lbl">À propos</span>
+      <p class="set-who">Colizy · version 1.0<br>Suivi automatique des colis par Ship24.</p>
     </div>
   </div>
 </div>
@@ -774,21 +823,56 @@ $('push-btn').addEventListener('click',function(){
   }).then(function(){toast(on?'Notifications désactivées':'Notifications activées')}).catch(function(){toast("Activation impossible.")}).then(function(){b.disabled=false;pushState()});
 });
 
-function mailState(){
+/* Préférences (synchronisées dans Supabase) */
+var P={mail:false,alert_expedie:true,alert_livraison:true,alert_livre:true,alert_retard:true,matin_on:false,matin_h:8,silence_on:false,silence_debut:22,silence_fin:8};
+function paintPrefs(){
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pref]'),function(el){var k=el.getAttribute('data-pref');if(el.type==='checkbox') el.checked=!!P[k];else el.value=String(P[k])});
+  var b=$('mail-btn');b.setAttribute('data-on',P.mail?'1':'0');b.textContent=P.mail?'Désactiver les notifications par mail':'Activer les notifications par mail';
+}
+function loadPrefs(){
+  paintPrefs();
   if(!sb||!user) return;
-  sb.from('prefs').select('mail').maybeSingle().then(function(r){
-    var on=!!(r.data&&r.data.mail),b=$('mail-btn');
-    b.setAttribute('data-on',on?'1':'0');
-    b.textContent=on?'Désactiver les notifications par mail':'Activer les notifications par mail';
+  sb.from('prefs').select('*').maybeSingle().then(function(r){
+    if(r.data){for(var k in P){if(r.data[k]!==undefined&&r.data[k]!==null) P[k]=r.data[k]}}
+    paintPrefs();
   });
 }
-$('mail-btn').addEventListener('click',function(){
-  var b=$('mail-btn'),on=b.getAttribute('data-on')!=='1';b.disabled=true;
-  sb.from('prefs').upsert({user_id:user.id,mail:on},{onConflict:'user_id'}).then(function(r){
-    if(r.error) throw r.error;toast(on?'Mails activés':'Mails désactivés');
-  }).catch(function(){toast('Activation impossible.')}).then(function(){b.disabled=false;mailState()});
+function savePrefs(patch){
+  for(var k in patch) P[k]=patch[k];
+  paintPrefs();
+  var row={user_id:user.id};for(var q in P) row[q]=P[q];
+  return sb.from('prefs').upsert(row,{onConflict:'user_id'}).then(function(r){if(r.error) throw r.error}).catch(function(){toast("Enregistrement impossible.")});
+}
+document.addEventListener('change',function(e){
+  var el=e.target.closest&&e.target.closest('[data-pref]');if(!el) return;
+  var k=el.getAttribute('data-pref'),p={};p[k]=(el.type==='checkbox')?el.checked:Number(el.value);savePrefs(p);
 });
-$('nav-reglages').addEventListener('click',function(){openSettings();pushState();mailState()});
+$('mail-btn').addEventListener('click',function(){var on=!P.mail;savePrefs({mail:on}).then(function(){toast(on?'Mails activés':'Mails désactivés')})});
+/* Pluie réglable (sur cet appareil) */
+Array.prototype.forEach.call(document.querySelectorAll('input[name=rain]'),function(r){
+  r.addEventListener('change',function(){try{localStorage.setItem('colizy-rain',r.value)}catch(e){}if(window.__rainUpdate) window.__rainUpdate()});
+});
+function paintRain(){var v='normal';try{var s=localStorage.getItem('colizy-rain');if(s) v=s}catch(e){}Array.prototype.forEach.call(document.querySelectorAll('input[name=rain]'),function(r){r.checked=(r.value===v)})}
+/* Mot de passe */
+$('pw-open').addEventListener('click',function(){var f=$('pw-form');f.hidden=!f.hidden;if(!f.hidden) $('pw1').focus()});
+$('pw-form').addEventListener('submit',function(e){
+  e.preventDefault();var a=$('pw1').value,b=$('pw2').value,m=$('pw-msg');
+  if(a.length<8){m.textContent='8 caractères minimum.';return}
+  if(a!==b){m.textContent='Les deux mots de passe sont différents.';return}
+  $('pw-save').disabled=true;m.textContent='';
+  sb.auth.updateUser({password:a}).then(function(r){
+    if(r.error){m.textContent=(r.error.message||'Changement impossible.');return}
+    $('pw1').value='';$('pw2').value='';$('pw-form').hidden=true;toast('Mot de passe changé');
+  }).catch(function(){m.textContent='Changement impossible.'}).then(function(){$('pw-save').disabled=false});
+});
+/* Inviter un ami */
+$('invite').addEventListener('click',function(){
+  var url='https://antho24kb.github.io/livraisons/';
+  if(navigator.share){navigator.share({title:'Colizy',text:'Suis tes colis avec Colizy',url:url}).catch(function(){})}
+  else if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){toast('Lien copié')}).catch(function(){toast(url)})}
+  else toast(url);
+});
+$('nav-reglages').addEventListener('click',function(){openSettings();pushState();loadPrefs();paintRain()});
 $('set-close').addEventListener('click',closeSettings);
 $('set-overlay').addEventListener('click',function(e){if(e.target===$('set-overlay')) closeSettings()});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('set-overlay').hidden) closeSettings()});
@@ -846,9 +930,13 @@ document.documentElement.setAttribute('data-theme','dark');
     }
     timer=requestAnimationFrame(frame);
   }
+  function level(){try{var s=localStorage.getItem('colizy-rain');if(s==='off'||s==='soft'||s==='normal'||s==='strong') return s}catch(e){}return 'normal'}
   function update(){
     document.documentElement.classList.toggle('lt',!isDark());
     if(timer){cancelAnimationFrame(timer);timer=null}
+    var lv=level();
+    if(lv==='off'){cv.style.display='none';return}
+    cv.style.display='';cv.style.opacity={soft:.22,normal:.42,strong:.72}[lv];
     size();
     if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){still();return}
     timer=requestAnimationFrame(frame);
@@ -857,6 +945,7 @@ document.documentElement.setAttribute('data-theme','dark');
   document.addEventListener('visibilitychange',update);
   try{new MutationObserver(update).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']})}catch(e){}
   try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',update)}catch(e){}
+  window.__rainUpdate=update;
   update();
 })();
 

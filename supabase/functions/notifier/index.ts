@@ -1,5 +1,6 @@
-// Fonction « notifier » : lancée toutes les 3 h par le planificateur Supabase.
-// Vérifie les colis de tous les utilisateurs via Ship24 et envoie une notification push quand le statut avance.
+// Fonction « notifier » : lancée toutes les heures par le planificateur Supabase.
+// 1) rafraîchit le suivi (Ship24), 2) alerte les changements de statut, 3) alerte les retards, 4) résumé du matin.
+// Respecte les réglages de chaque utilisateur (table prefs) : alertes choisies, heures de silence, résumé du matin.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -11,7 +12,16 @@ const STATUT: Record<string, string> = {
 const MSG: Record<string, string> = {
   expedie: 'est expédié 📦', livraison: 'est en cours de livraison 🚚', recu: 'est livré ✅',
 };
+const ALERTE: Record<string, string> = { expedie: 'alert_expedie', livraison: 'alert_livraison', recu: 'alert_livre' };
+const DEFAUT = {
+  mail: false, alert_expedie: true, alert_livraison: true, alert_livre: true, alert_retard: true,
+  matin_on: false, matin_h: 8, silence_on: false, silence_debut: 22, silence_fin: 8,
+};
 const cle = (r: { recu: boolean; statut: string }) => (r.recu ? 'recu' : r.statut);
+const heureParis = () =>
+  Number(new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
+const dateParis = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date());
+const enSilence = (h: number, d: number, f: number) => (d === f ? false : d < f ? h >= d && h < f : h >= d || h < f);
 
 Deno.serve(async (req) => {
   if (req.headers.get('x-cron-secret') !== Deno.env.get('CRON_SECRET')) {
@@ -20,9 +30,53 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   webpush.setVapidDetails('mailto:antho24kb@hotmail.fr', Deno.env.get('VAPID_PUBLIC')!, Deno.env.get('VAPID_PRIVATE')!);
   const ship = Deno.env.get('SHIP24_KEY')!;
+  const heure = heureParis();
+  const aujourdhui = dateParis();
 
-  // 1) rafraîchir les colis non reçus (max 20 par passage)
+  const { data: lignes } = await sb.from('prefs').select('*');
+  const prefs = new Map((lignes ?? []).map((p) => [p.user_id as string, p]));
+  // deno-lint-ignore no-explicit-any
+  const pref = (uid: string): any => ({ ...DEFAUT, ...(prefs.get(uid) ?? {}) });
+
+  let envoyes = 0;
+  async function envoyer(uid: string, titre: string, corps: string, tag: string) {
+    const p = pref(uid);
+    const resend = Deno.env.get('RESEND_KEY');
+    const dest = Deno.env.get('MAIL_TO');
+    if (p.mail && resend && dest) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${resend}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'Colizy <onboarding@resend.dev>',
+            to: [dest],
+            subject: corps,
+            text: `${corps}\n\nOuvre l'appli : https://antho24kb.github.io/livraisons/`,
+          }),
+        });
+        if (r.ok) envoyes++;
+      } catch (_) { /* tant pis */ }
+    }
+    const { data: subs } = await sb.from('push_subs').select('*').eq('user_id', uid);
+    for (const s of subs ?? []) {
+      try {
+        await webpush.sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          JSON.stringify({ title: titre, body: corps, tag }),
+        );
+        envoyes++;
+      } catch (e) {
+        const code = (e as { statusCode?: number }).statusCode;
+        if (code === 404 || code === 410) await sb.from('push_subs').delete().eq('id', s.id);
+      }
+    }
+  }
+
+  // 1) rafraîchir le suivi : colis non reçus pas vérifiés depuis 3 h (max 20 par passage)
+  const limite = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
   const { data: aVerifier } = await sb.from('colis').select('id,suivi').eq('recu', false).neq('suivi', '')
+    .or(`derniere_maj.is.null,derniere_maj.lt.${limite}`)
     .order('derniere_maj', { ascending: true, nullsFirst: true }).limit(20);
   for (const r of aVerifier ?? []) {
     try {
@@ -52,44 +106,48 @@ Deno.serve(async (req) => {
     } catch (_) { /* prochain passage */ }
   }
 
-  // 2) notifier les changements pas encore signalés
+  // 2) changements de statut pas encore signalés
   const { data: tous } = await sb.from('colis').select('id,user_id,article,statut,recu,notif_cle').neq('suivi', '');
-  let envoyes = 0;
   for (const c of tous ?? []) {
     const k = cle(c);
     if (k === c.notif_cle) continue;
+    const p = pref(c.user_id);
+    if (!MSG[k] || p[ALERTE[k]] === false) {
+      await sb.from('colis').update({ notif_cle: k }).eq('id', c.id);
+      continue;
+    }
+    if (p.silence_on && enSilence(heure, p.silence_debut, p.silence_fin)) continue; // reporté à la fin du silence
     await sb.from('colis').update({ notif_cle: k }).eq('id', c.id);
-    if (!MSG[k]) continue;
-    const { data: pref } = await sb.from('prefs').select('mail').eq('user_id', c.user_id).maybeSingle();
-    if (pref?.mail && Deno.env.get('RESEND_KEY') && Deno.env.get('MAIL_TO')) {
-      try {
-        const r = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${Deno.env.get('RESEND_KEY')}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'Colizy <onboarding@resend.dev>',
-            to: [Deno.env.get('MAIL_TO')],
-            subject: `${c.article} ${MSG[k]}`,
-            text: `${c.article} ${MSG[k]}\n\nOuvre l'appli : https://antho24kb.github.io/livraisons/`,
-          }),
-        });
-        if (r.ok) envoyes++;
-      } catch (_) { /* tant pis */ }
-    }
-    const { data: subs } = await sb.from('push_subs').select('*').eq('user_id', c.user_id);
-    for (const s of subs ?? []) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ title: 'Colizy', body: `${c.article} ${MSG[k]}`, tag: c.id }),
-        );
-        envoyes++;
-      } catch (e) {
-        if ((e as { statusCode?: number }).statusCode === 404 || (e as { statusCode?: number }).statusCode === 410) {
-          await sb.from('push_subs').delete().eq('id', s.id);
-        }
-      }
-    }
+    await envoyer(c.user_id, 'Colizy', `${c.article} ${MSG[k]}`, c.id);
   }
+
+  // 3) retards (une seule alerte par colis)
+  const { data: retards } = await sb.from('colis').select('id,user_id,article')
+    .eq('recu', false).lt('date_prevue', aujourdhui).is('retard_notifie', null);
+  for (const c of retards ?? []) {
+    const p = pref(c.user_id);
+    if (p.alert_retard === false) {
+      await sb.from('colis').update({ retard_notifie: aujourdhui }).eq('id', c.id);
+      continue;
+    }
+    if (p.silence_on && enSilence(heure, p.silence_debut, p.silence_fin)) continue;
+    await sb.from('colis').update({ retard_notifie: aujourdhui }).eq('id', c.id);
+    await envoyer(c.user_id, 'Colizy', `${c.article} est en retard ⏰`, `retard-${c.id}`);
+  }
+
+  // 4) résumé du matin
+  for (const [uid, p] of prefs) {
+    if (!p.matin_on || Number(p.matin_h) !== heure || p.matin_derniere === aujourdhui) continue;
+    const { data: cs } = await sb.from('colis').select('article,date_prevue,statut,livraison_estimee')
+      .eq('user_id', uid).eq('recu', false);
+    const duJour = (cs ?? []).filter((c) =>
+      c.date_prevue === aujourdhui || c.statut === 'livraison' ||
+      (c.livraison_estimee && String(c.livraison_estimee).slice(0, 10) === aujourdhui));
+    await sb.from('prefs').update({ matin_derniere: aujourdhui }).eq('user_id', uid);
+    if (!duJour.length) continue;
+    const noms = duJour.slice(0, 3).map((c) => c.article).join(', ') + (duJour.length > 3 ? '…' : '');
+    await envoyer(uid, 'Colis du jour', `${duJour.length} colis aujourd'hui : ${noms}`, `matin-${aujourdhui}`);
+  }
+
   return new Response(JSON.stringify({ envoyes }), { headers: { 'Content-Type': 'application/json' } });
 });
