@@ -433,15 +433,9 @@ html:not(.lt) .row{background:rgba(10,21,14,.78);-webkit-backdrop-filter:blur(8p
       <label class="chk"><input type="checkbox" data-pref="alert_retard"><span>Il est en retard</span></label>
     </div>
     <div class="set-sec">
-      <span class="lbl">Résumé du matin</span>
-      <label class="chk"><input type="checkbox" data-pref="matin_on"><span>Recevoir les colis du jour à</span></label>
-      <select data-pref="matin_h" aria-label="Heure du résumé"><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option></select>
-    </div>
-    <div class="set-sec">
-      <span class="lbl">Heures de silence</span>
-      <label class="chk"><input type="checkbox" data-pref="silence_on"><span>Pas de notification entre</span></label>
-      <div class="row2"><select data-pref="silence_debut" aria-label="Début"><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option><option value="0">00h</option><option value="1">01h</option><option value="2">02h</option></select><span>et</span><select data-pref="silence_fin" aria-label="Fin"><option value="5">05h</option><option value="6">06h</option><option value="7">07h</option><option value="8">08h</option><option value="9">09h</option><option value="10">10h</option><option value="11">11h</option></select></div>
-      <p class="set-who">Les alertes reçues pendant le silence arrivent à la fin de la plage.</p>
+      <span class="lbl">Ne pas déranger</span>
+      <label class="chk"><input type="checkbox" data-pref="silence_on"><span>Mettre les notifications en pause</span></label>
+      <p class="set-who">Les alertes sont gardées en attente et arrivent quand tu le désactives.</p>
     </div>
     <div class="set-sec">
       <span class="lbl" id="lbl-rain">Pluie Matrix</span>
@@ -824,7 +818,7 @@ $('push-btn').addEventListener('click',function(){
 });
 
 /* Préférences (synchronisées dans Supabase) */
-var P={mail:false,alert_expedie:true,alert_livraison:true,alert_livre:true,alert_retard:true,matin_on:false,matin_h:8,silence_on:false,silence_debut:22,silence_fin:8};
+var P={mail:false,alert_expedie:true,alert_livraison:true,alert_livre:true,alert_retard:true,silence_on:false};
 function paintPrefs(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-pref]'),function(el){var k=el.getAttribute('data-pref');if(el.type==='checkbox') el.checked=!!P[k];else el.value=String(P[k])});
   var b=$('mail-btn');b.setAttribute('data-on',P.mail?'1':'0');b.textContent=P.mail?'Désactiver les notifications par mail':'Activer les notifications par mail';

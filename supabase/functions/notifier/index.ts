@@ -1,6 +1,6 @@
 // Fonction « notifier » : lancée toutes les heures par le planificateur Supabase.
-// 1) rafraîchit le suivi (Ship24), 2) alerte les changements de statut, 3) alerte les retards, 4) résumé du matin.
-// Respecte les réglages de chaque utilisateur (table prefs) : alertes choisies, heures de silence, résumé du matin.
+// 1) rafraîchit le suivi (Ship24), 2) alerte les changements de statut, 3) alerte les retards.
+// Respecte les réglages de chaque utilisateur (table prefs) : alertes choisies et mode « ne pas déranger ».
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 
@@ -15,7 +15,7 @@ const MSG: Record<string, string> = {
 const ALERTE: Record<string, string> = { expedie: 'alert_expedie', livraison: 'alert_livraison', recu: 'alert_livre' };
 const DEFAUT = {
   mail: false, alert_expedie: true, alert_livraison: true, alert_livre: true, alert_retard: true,
-  matin_on: false, matin_h: 8, silence_on: false, silence_debut: 22, silence_fin: 8,
+  silence_on: false,
 };
 const cle = (r: { recu: boolean; statut: string }) => (r.recu ? 'recu' : r.statut);
 const heureParis = () =>
@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
       await sb.from('colis').update({ notif_cle: k }).eq('id', c.id);
       continue;
     }
-    if (p.silence_on && enSilence(heure, p.silence_debut, p.silence_fin)) continue; // reporté à la fin du silence
+    if (p.silence_on) continue; // ne pas déranger : l'alerte reste en attente
     await sb.from('colis').update({ notif_cle: k }).eq('id', c.id);
     await envoyer(c.user_id, 'Colizy', `${c.article} ${MSG[k]}`, c.id);
   }
@@ -130,23 +130,9 @@ Deno.serve(async (req) => {
       await sb.from('colis').update({ retard_notifie: aujourdhui }).eq('id', c.id);
       continue;
     }
-    if (p.silence_on && enSilence(heure, p.silence_debut, p.silence_fin)) continue;
+    if (p.silence_on) continue; // ne pas déranger
     await sb.from('colis').update({ retard_notifie: aujourdhui }).eq('id', c.id);
     await envoyer(c.user_id, 'Colizy', `${c.article} est en retard ⏰`, `retard-${c.id}`);
-  }
-
-  // 4) résumé du matin
-  for (const [uid, p] of prefs) {
-    if (!p.matin_on || Number(p.matin_h) !== heure || p.matin_derniere === aujourdhui) continue;
-    const { data: cs } = await sb.from('colis').select('article,date_prevue,statut,livraison_estimee')
-      .eq('user_id', uid).eq('recu', false);
-    const duJour = (cs ?? []).filter((c) =>
-      c.date_prevue === aujourdhui || c.statut === 'livraison' ||
-      (c.livraison_estimee && String(c.livraison_estimee).slice(0, 10) === aujourdhui));
-    await sb.from('prefs').update({ matin_derniere: aujourdhui }).eq('user_id', uid);
-    if (!duJour.length) continue;
-    const noms = duJour.slice(0, 3).map((c) => c.article).join(', ') + (duJour.length > 3 ? '…' : '');
-    await envoyer(uid, 'Colis du jour', `${duJour.length} colis aujourd'hui : ${noms}`, `matin-${aujourdhui}`);
   }
 
   return new Response(JSON.stringify({ envoyes }), { headers: { 'Content-Type': 'application/json' } });
