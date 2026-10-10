@@ -225,8 +225,8 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
         <select id="f-transporteur" name="transporteur"></select>
       </div>
       <div class="field">
-        <label for="f-suivi">N° de suivi</label>
-        <input type="text" id="f-suivi" name="suivi" placeholder="Ex : 6A12345678901" autocapitalize="characters" required>
+        <label for="f-suivi">N° de suivi (plus tard si pas encore expédié)</label>
+        <input type="text" id="f-suivi" name="suivi" placeholder="À ajouter dès l'expédition" autocapitalize="characters">
       </div>
     </div>
     <div id="msg" role="status" aria-live="polite"></div>
@@ -375,6 +375,7 @@ function rowHtml(it){
   var cn=(CARRIERS[it.transporteur||'']||{}).n;
   if(it.transporteur&&cn) bits.push(esc(cn));
   if(it.suivi) bits.push('<span class="track">'+esc(it.suivi)+'</span>');
+  else if(!done) bits.push('<span>Suivi à ajouter</span>');
   if(bits.length) meta.push('<span>'+bits.join(' · ')+'</span>');
   var when=done
     ? (it.recuLe?'Reçu le '+esc(noDot(fShort.format(parseDay(it.recuLe)))):'Reçu')
@@ -519,7 +520,6 @@ $('form').addEventListener('submit',function(e){
   var prix=parsePrice(f.elements.prix.value);
   if(!article){msg("Indique le nom de l'article.");f.elements.article.focus();return}
   if(!date){msg('Choisis la date de livraison prévue.');f.elements.date.focus();return}
-  if(!f.elements.suivi.value.trim()){msg('Indique le numéro de suivi : il sert à suivre ta commande.');f.elements.suivi.focus();return}
   if(prix!==prix){msg('Le prix doit être un nombre, par exemple 29,99.');f.elements.prix.focus();return}
   var base={article:article,boutique:f.elements.boutique.value.trim(),date:date,prix:prix,transporteur:f.elements.transporteur.value,suivi:f.elements.suivi.value.trim()};
   var wasEdit=editId;
