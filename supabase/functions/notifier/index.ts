@@ -58,6 +58,22 @@ Deno.serve(async (req) => {
     if (k === c.notif_cle) continue;
     await sb.from('colis').update({ notif_cle: k }).eq('id', c.id);
     if (!MSG[k]) continue;
+    const { data: pref } = await sb.from('prefs').select('mail').eq('user_id', c.user_id).maybeSingle();
+    if (pref?.mail && Deno.env.get('RESEND_KEY') && Deno.env.get('MAIL_TO')) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${Deno.env.get('RESEND_KEY')}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'Livraisons <onboarding@resend.dev>',
+            to: [Deno.env.get('MAIL_TO')],
+            subject: `${c.article} ${MSG[k]}`,
+            text: `${c.article} ${MSG[k]}\n\nOuvre l'appli : https://antho24kb.github.io/livraisons/`,
+          }),
+        });
+        if (r.ok) envoyes++;
+      } catch (_) { /* tant pis */ }
+    }
     const { data: subs } = await sb.from('push_subs').select('*').eq('user_id', c.user_id);
     for (const s of subs ?? []) {
       try {
