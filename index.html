@@ -165,7 +165,7 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
     <input type="search" id="q" placeholder="Rechercher (article, boutique, suivi…)" aria-label="Rechercher une livraison" autocomplete="off">
   </div>
   <div id="list" style="display:flex;flex-direction:column;gap:18px"></div>
-  <div class="account" id="account" hidden><span id="who"></span><button type="button" class="btn ghost" id="logout">Se déconnecter</button></div>
+  <div class="account" id="account" hidden><span id="who"></span><span><button type="button" class="btn ghost" id="refresh">Actualiser le suivi</button><button type="button" class="btn ghost" id="logout">Se déconnecter</button></span></div>
 </div>
 
 <button type="button" class="fab" id="fab" aria-label="Ajouter une livraison">
@@ -403,7 +403,8 @@ function rowHtml(it){
   return '<li class="row '+st+'">'
     +'<div class="date" aria-hidden="true"><span class="w">'+esc(noDot(fWeek.format(dt)))+'</span><span class="d">'+dt.getDate()+'</span><span class="m">'+esc(noDot(fMonth.format(dt)))+'</span></div>'
     +'<div class="main"><div class="name">'+esc(it.article)+'</div><div class="meta">'+meta.join('')+'</div>'
-    +'<div class="when '+(done?'':(d<0?'late':(d===0?'today':'')))+'" style="margin-top:4px">'+when+'</div></div>'
+    +'<div class="when '+(done?'':(d<0?'late':(d===0?'today':'')))+'" style="margin-top:4px">'+when+'</div>'
+    +(it.evenement?'<div class="when" style="margin-top:2px">📍 '+esc(it.evenement)+'</div>':'')+'</div>'
     +'<div class="price'+(typeof it.prix==='number'?'':' none')+'">'+(typeof it.prix==='number'?eur.format(it.prix):'—')+'</div>'
     +(done?'':progressHtml(it))
     +actions
@@ -452,6 +453,14 @@ var MAP={article:'article',boutique:'boutique',date:'date_prevue',prix:'prix',tr
 function toRow(o){var r={};Object.keys(o).forEach(function(k){if(MAP[k]) r[MAP[k]]=(o[k]===''?null:o[k])});if('suivi' in r&&r.suivi===null) r.suivi='';return r}
 function fail(){toast("Enregistrement impossible. Vérifie ta connexion.")}
 function chk(res){if(res.error) throw res.error;return res.data}
+function refreshTracking(manual){
+  if(!sb||!user||!sb.functions) return Promise.resolve();
+  return sb.functions.invoke('maj-suivi').then(function(r){
+    if(r.error){if(manual) toast('Suivi automatique indisponible pour le moment.');return}
+    var n=r.data&&r.data.maj||0;
+    return loadItems().then(function(){if(manual) toast(n?(n+' colis mis à jour'):'Déjà à jour')});
+  }).catch(function(){if(manual) toast('Suivi automatique indisponible pour le moment.')});
+}
 function loadItems(){
   return sb.from('colis').select('*').order('date_prevue').then(chk).then(function(rows){items=rows.map(fromRow);loaded=true;render()});
 }
@@ -586,6 +595,7 @@ $('auth-form').addEventListener('submit',function(e){
     amsg('');
   });
 });
+$('refresh').addEventListener('click',function(){toast('Mise à jour du suivi…');refreshTracking(true)});
 $('logout').addEventListener('click',function(){sb.auth.signOut()});
 
 function onSession(session){
@@ -594,7 +604,7 @@ function onSession(session){
     user=session.user;
     $('auth').hidden=true;$('account').hidden=false;$('who').textContent=user.email;
     loaded=false;render();
-    loadItems().catch(function(){loaded=true;render();toast('Chargement impossible. Vérifie ta connexion.')});
+    loadItems().then(function(){refreshTracking(false)}).catch(function(){loaded=true;render();toast('Chargement impossible. Vérifie ta connexion.')});
   } else {
     user=null;items=[];loaded=false;
     $('auth').hidden=false;$('account').hidden=true;$('a-pass').value='';render();
