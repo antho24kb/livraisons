@@ -15,6 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --bg:#EDEFF3; --surface:#FFFFFF; --ink:#12161E; --muted:#596273; --line:#D9DDE5;
@@ -141,6 +142,17 @@ label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:u
 #msg{font-size:.9rem;color:var(--late);min-height:1.2em}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(140px + env(safe-area-inset-bottom));z-index:50;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:.92rem;box-shadow:var(--shadow)}
 .toast[hidden]{display:none}
+.auth{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.auth[hidden]{display:none}
+.auth-card{width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px}
+.auth-card img{width:84px;height:84px;border-radius:20px;align-self:center}
+.auth-card h1{text-align:center}
+.auth-card .sub{text-align:center;color:var(--muted)}
+.auth-msg{font-size:.92rem;min-height:1.2em;text-align:center}
+.auth-msg.err{color:var(--late)}.auth-msg.ok{color:var(--ok)}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;padding:8px;text-decoration:underline}
+.account{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;min-width:0;min-height:44px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -152,7 +164,7 @@ label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:u
     <input type="search" id="q" placeholder="Rechercher (article, boutique, suivi…)" aria-label="Rechercher une livraison" autocomplete="off">
   </div>
   <div id="list" style="display:flex;flex-direction:column;gap:18px"></div>
-  <p class="note" id="note" hidden>Mode local : tes livraisons sont gardées dans ce navigateur uniquement.</p>
+  <div class="account" id="account" hidden><span id="who"></span><button type="button" class="btn ghost" id="logout">Se déconnecter</button></div>
 </div>
 
 <button type="button" class="fab" id="fab" aria-label="Ajouter une livraison">
@@ -220,6 +232,19 @@ label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:u
     <button type="submit" class="btn primary" id="f-submit">Ajouter la livraison</button>
   </form>
 </div>
+<div class="auth" id="auth">
+  <form class="auth-card" id="auth-form" autocomplete="on">
+    <img src="icons/icon-192.png" alt="" width="84" height="84">
+    <h1>Mes livraisons</h1>
+    <p class="sub" id="auth-sub">Connecte-toi pour retrouver tes colis.</p>
+    <div class="field"><label for="a-email">E-mail</label><input type="email" id="a-email" autocomplete="email" required></div>
+    <div class="field"><label for="a-pass">Mot de passe</label><input type="password" id="a-pass" autocomplete="current-password" minlength="6" required></div>
+    <button type="submit" class="btn primary" id="a-submit">Se connecter</button>
+    <p class="auth-msg" id="auth-msg" role="status" aria-live="polite"></p>
+    <button type="button" class="linkbtn" id="a-switch">Pas de compte ? Créer un compte</button>
+    <button type="button" class="linkbtn" id="a-forgot">Mot de passe oublié ?</button>
+  </form>
+</div>
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
@@ -240,7 +265,7 @@ var CARRIERS={
 var STEPS=['Commandé','Expédié','En livraison','Reçu'];
 var KEYS=['commande','expedie','livraison'];
 var NEXTLBL={commande:'Passer à « Expédié »',expedie:'Passer à « En livraison »'};
-var items=[],loaded=false,mode='pending',tab='avenir',query='',menuId=null,confirmId=null,editId=null,col=null,toastTimer=null,msgTimer=null;
+var items=[],loaded=false,tab='avenir',query='',menuId=null,confirmId=null,editId=null,toastTimer=null,msgTimer=null;
 var LS_KEY='livraisons-multimedia-v1';
 var eur=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'});
 var fWeek=new Intl.DateTimeFormat('fr-FR',{weekday:'short'});
@@ -407,28 +432,30 @@ function renderList(){
 }
 function render(){
   renderSummary();renderNav();renderList();renderBoutiques();
-  $('note').hidden=(mode!=='local');
 }
 
-/* Stockage */
-function saveLocal(){try{localStorage.setItem(LS_KEY,JSON.stringify(items))}catch(e){}}
-function loadLocal(){try{var v=JSON.parse(localStorage.getItem(LS_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}}
-function fail(){toast("Enregistrement impossible. Réessaie dans un instant.")}
-function newId(){return 'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+/* Stockage : Supabase */
+var SUPABASE_URL='https://wxmlrnocxrshtlczvpgr.supabase.co';
+var SUPABASE_KEY='sb_publishable_OaoSIOOYM9_sNsJWtuGc8Q_8U5TDplA';
+var sb=null,user=null;
+function fromRow(r){return {id:r.id,article:r.article,boutique:r.boutique||'',date:r.date_prevue,prix:r.prix==null?null:Number(r.prix),transporteur:r.transporteur||'',suivi:r.suivi||'',statut:r.statut||'commande',recu:!!r.recu,recuLe:r.recu_le||null,evenement:r.dernier_evenement||''}}
+var MAP={article:'article',boutique:'boutique',date:'date_prevue',prix:'prix',transporteur:'transporteur',suivi:'suivi',statut:'statut',recu:'recu',recuLe:'recu_le'};
+function toRow(o){var r={};Object.keys(o).forEach(function(k){if(MAP[k]) r[MAP[k]]=(o[k]===''?null:o[k])});if('suivi' in r&&r.suivi===null) r.suivi='';return r}
+function fail(){toast("Enregistrement impossible. Vérifie ta connexion.")}
+function chk(res){if(res.error) throw res.error;return res.data}
+function loadItems(){
+  return sb.from('colis').select('*').order('date_prevue').then(chk).then(function(rows){items=rows.map(fromRow);loaded=true;render()});
+}
 function addItem(data){
-  if(mode==='db') return col.add(data);
-  items.push(Object.assign({id:newId()},data));saveLocal();render();
-  return Promise.resolve();
+  return sb.from('colis').insert(toRow(data)).select().single().then(chk).then(function(r){items.push(fromRow(r));render()});
 }
 function updateItem(id,patch){
-  if(mode==='db') return col.doc(id).update(patch);
-  items=items.map(function(i){return i.id===id?Object.assign({},i,patch):i});saveLocal();render();
-  return Promise.resolve();
+  items=items.map(function(i){return i.id===id?Object.assign({},i,patch):i});render();
+  return sb.from('colis').update(toRow(patch)).eq('id',id).then(chk).catch(function(e){loadItems();throw e});
 }
 function removeItem(id){
-  if(mode==='db') return col.doc(id).delete();
-  items=items.filter(function(i){return i.id!==id});saveLocal();render();
-  return Promise.resolve();
+  items=items.filter(function(i){return i.id!==id});render();
+  return sb.from('colis').delete().eq('id',id).then(chk).catch(function(e){loadItems();throw e});
 }
 
 /* Feuille d'ajout / modification */
@@ -498,32 +525,77 @@ $('list').addEventListener('click',function(e){
   if(!b) return;
   var a=b.getAttribute('data-action'),id=b.getAttribute('data-id');
   var it=items.filter(function(i){return i.id===id})[0];
-  if(a==='recu'){menuId=null;updateItem(id,{recu:true,recuLe:today(),statut:'livraison'}).then(function(){toast('Marqué comme reçu')}).catch(fail);if(mode==='db')render()}
-  else if(a==='undo'){updateItem(id,{recu:false,recuLe:null}).catch(fail);if(mode==='db')render()}
-  else if(a==='next'){menuId=null;updateItem(id,{statut:KEYS[Math.min(2,KEYS.indexOf((it&&it.statut)||'commande')+1)]}).catch(fail);if(mode==='db')render()}
+  if(a==='recu'){menuId=null;updateItem(id,{recu:true,recuLe:today(),statut:'livraison'}).then(function(){toast('Marqué comme reçu')}).catch(fail);}
+  else if(a==='undo'){updateItem(id,{recu:false,recuLe:null}).catch(fail);}
+  else if(a==='next'){menuId=null;updateItem(id,{statut:KEYS[Math.min(2,KEYS.indexOf((it&&it.statut)||'commande')+1)]}).catch(fail);}
   else if(a==='menu'){menuId=(menuId===id?null:id);confirmId=null;render()}
   else if(a==='edit'){menuId=null;render();openSheet(it)}
   else if(a==='del'){confirmId=id;menuId=null;render()}
-  else if(a==='del-yes'){confirmId=null;removeItem(id).then(function(){toast('Livraison supprimée')}).catch(fail);if(mode==='db')render()}
+  else if(a==='del-yes'){confirmId=null;removeItem(id).then(function(){toast('Livraison supprimée')}).catch(fail);}
   else if(a==='cancel'){confirmId=null;menuId=null;render()}
 });
 
-/* Démarrage */
-function startLocal(){mode='local';items=loadLocal();loaded=true;render()}
+/* Connexion */
+var signup=false;
+function amsg(t,cls){var m=$('auth-msg');m.textContent=t||'';m.className='auth-msg '+(cls||'')}
+function setSignup(v){
+  signup=v;
+  $('a-submit').textContent=v?'Créer mon compte':'Se connecter';
+  $('a-switch').textContent=v?'Déjà un compte ? Se connecter':'Pas de compte ? Créer un compte';
+  $('a-pass').autocomplete=v?'new-password':'current-password';
+  $('auth-sub').textContent=v?'Crée ton compte avec ton e-mail.':'Connecte-toi pour retrouver tes colis.';
+  amsg('');
+}
+function frErr(e){
+  var m=(e&&e.message)||'';
+  if(/Invalid login/i.test(m)) return 'E-mail ou mot de passe incorrect.';
+  if(/already registered/i.test(m)) return 'Un compte existe déjà avec cet e-mail.';
+  if(/Password should/i.test(m)) return 'Mot de passe trop court (6 caractères minimum).';
+  if(/Email not confirmed/i.test(m)) return "Confirme d'abord ton e-mail (regarde ta boîte de réception).";
+  if(/rate limit/i.test(m)) return 'Trop de tentatives. Réessaie dans quelques minutes.';
+  return 'Une erreur est survenue. Réessaie.';
+}
+$('a-switch').addEventListener('click',function(){setSignup(!signup)});
+$('a-forgot').addEventListener('click',function(){
+  var em=$('a-email').value.trim();
+  if(!em){amsg("Saisis ton e-mail d'abord.",'err');return}
+  sb.auth.resetPasswordForEmail(em,{redirectTo:location.href.split('#')[0]}).then(function(r){
+    if(r.error) amsg(frErr(r.error),'err'); else amsg('E-mail envoyé : ouvre le lien pour changer ton mot de passe.','ok');
+  });
+});
+$('auth-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  if(!sb){return}
+  var em=$('a-email').value.trim(),pw=$('a-pass').value;
+  amsg('Un instant…');
+  var p=signup?sb.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.href.split('#')[0]}}):sb.auth.signInWithPassword({email:em,password:pw});
+  p.then(function(r){
+    if(r.error){amsg(frErr(r.error),'err');return}
+    if(signup&&!r.data.session){amsg('Compte créé. Confirme ton e-mail (lien reçu), puis connecte-toi.','ok');setSignup(false);return}
+    amsg('');
+  });
+});
+$('logout').addEventListener('click',function(){sb.auth.signOut()});
+
+function onSession(session){
+  if(session&&session.user){
+    if(user&&user.id===session.user.id) return;
+    user=session.user;
+    $('auth').hidden=true;$('account').hidden=false;$('who').textContent=user.email;
+    loaded=false;render();
+    loadItems().catch(function(){loaded=true;render();toast('Chargement impossible. Vérifie ta connexion.')});
+  } else {
+    user=null;items=[];loaded=false;
+    $('auth').hidden=false;$('account').hidden=true;$('a-pass').value='';render();
+  }
+}
 $('f-transporteur').innerHTML=carrierOptions('');
-async function init(){
+function init(){
   render();
-  var db=null;
-  try{if(window.claude&&typeof window.claude.use==='function') db=await window.claude.use('db')}catch(err){db=null}
-  if(!db){startLocal();return}
-  mode='db';
-  try{
-    col=db.collection('livraisons');
-    col.onSnapshot(function(snap){
-      items=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
-      loaded=true;render();
-    },function(){loaded=true;render();toast('Synchronisation interrompue. Recharge la page.')});
-  }catch(err){startLocal()}
+  if(!window.supabase){$('auth-sub').textContent="Connexion indisponible : vérifie ta connexion internet puis recharge.";return}
+  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  sb.auth.onAuthStateChange(function(ev,session){setTimeout(function(){onSession(session)},0)});
+  sb.auth.getSession().then(function(r){onSession(r.data.session)});
 }
 init();
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
