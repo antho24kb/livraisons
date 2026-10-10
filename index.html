@@ -12,9 +12,6 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <title>Mes livraisons</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <style>
@@ -171,6 +168,51 @@ label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:u
 .account{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
 input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 12px;width:100%;min-width:0;min-height:44px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ===== Design v2 ===== */
+:root{--bg:#F2F4F8;--line:#E3E7EE;--card-sh:0 1px 2px rgba(18,22,30,.05),0 6px 16px rgba(18,22,30,.06);--r:18px}
+:root[data-theme="dark"]{--bg:#0B0F16;--surface:#151A24;--line:#232B3A;--card-sh:0 1px 0 rgba(255,255,255,.03) inset,0 6px 16px rgba(0,0,0,.35)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0B0F16;--surface:#151A24;--line:#232B3A;--card-sh:0 1px 0 rgba(255,255,255,.03) inset,0 6px 16px rgba(0,0,0,.35)}}
+body{padding-top:calc(14px + env(safe-area-inset-top))}
+.wrap>h1{font-size:1.55rem;letter-spacing:.06em;display:flex;align-items:center;gap:10px}
+.wrap>h1::before{content:"";width:30px;height:30px;border-radius:9px;background:url(icons/icon-192.png) center/cover}
+.alert{border:0;border-left:4px solid var(--late);border-radius:12px;padding:12px 14px;font-size:.95rem}
+.group-h{font-size:.9rem}
+.row{border:0;border-radius:var(--r);box-shadow:var(--card-sh);padding:16px 14px;gap:8px 12px}
+.row.late{box-shadow:inset 4px 0 0 var(--late),var(--card-sh)}
+.date{border-radius:14px;width:58px;padding:8px 0}
+.name{font-weight:700;font-size:1rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.price{font-size:.95rem;color:var(--ink)}
+.segs{gap:3px}.segs i{height:8px;border-radius:4px}
+.prog-l{align-items:center;margin-top:7px}
+.prog-l b{background:var(--tint);color:var(--accent);padding:3px 9px;border-radius:999px;font-size:.76rem}
+.row.late .prog-l b{background:var(--late-tint);color:var(--late)}
+.btn{border-radius:12px;min-height:42px}
+.btn.more{border-radius:12px}
+.nav{background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+.nav button[aria-current="page"]::before{content:"";position:absolute;top:0;width:28px;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+.fab{width:60px;height:60px;box-shadow:0 8px 22px rgba(40,72,214,.4)}
+.sheet{border-radius:24px 24px 0 0}
+.auth{background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 70%),var(--bg)}
+.auth-card{background:var(--surface);padding:26px 20px;border-radius:24px;box-shadow:var(--card-sh)}
+.auth-card img{width:92px;height:92px;border-radius:24px;box-shadow:0 10px 24px rgba(40,72,214,.35)}
+.auth-card h1{font-size:2rem}
+
+/* ===== Police Apple (SF Pro sur iPhone) ===== */
+:root{--f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',system-ui,sans-serif;--f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif}
+body{font-family:var(--f-body);-webkit-font-smoothing:antialiased;letter-spacing:-.011em}
+h1,.wrap>h1,.auth-card h1{text-transform:none;letter-spacing:-.03em;font-weight:800}
+.wrap>h1{font-size:1.9rem}
+.auth-card h1{font-size:1.9rem}
+.sheet-h h2{text-transform:none;letter-spacing:-.02em;font-size:1.4rem;font-weight:700}
+.group-h{text-transform:none;letter-spacing:-.01em;font-size:1.05rem;font-weight:700}
+.date{text-transform:none}
+.date .w,.date .m{text-transform:uppercase;font-size:.68rem;font-weight:700;letter-spacing:.06em}
+.date .d{font-size:1.65rem;font-weight:700;letter-spacing:-.03em}
+.name{font-weight:600;letter-spacing:-.02em}
+.next-name{font-weight:700}
+.btn{font-weight:600;letter-spacing:-.01em}
+.prog-l b{letter-spacing:0}
 </style>
 </head>
 <body>
