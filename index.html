@@ -268,6 +268,11 @@ a.cl:active{filter:brightness(.92)}
 .wrap{position:relative;z-index:1}
 :root[data-theme="dark"] .btn.warn{color:#fff;border-color:rgba(255,255,255,.85);background:rgba(255,255,255,.08)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.warn{color:#fff;border-color:rgba(255,255,255,.85);background:rgba(255,255,255,.08)}}
+
+/* ===== Titre sombre : blanc qui brille ===== */
+:root[data-theme="dark"] #title{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.9),0 0 18px rgba(0,255,65,.8),0 0 34px rgba(0,255,65,.45)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) #title{color:#fff;text-shadow:0 0 6px rgba(255,255,255,.9),0 0 18px rgba(0,255,65,.8),0 0 34px rgba(0,255,65,.45)}}
+#title{font-variant-numeric:tabular-nums;cursor:default}
 </style>
 </head>
 <body>
@@ -761,6 +766,31 @@ Array.prototype.forEach.call(document.querySelectorAll('input[name=theme]'),func
 if(window.matchMedia){try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(getTheme()==='auto') applyTheme('auto')})}catch(e){}}
 applyTheme(getTheme());
 
+
+/* Titre : les lettres défilent comme dans Matrix, puis se fixent */
+(function(){
+  var el=document.getElementById('title');if(!el) return;
+  var CH='ｱｲｳｴｵｶｷｸｹｺｻｼｽ01ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),busy=false;
+  function dark(){var t=document.documentElement.getAttribute('data-theme');if(t) return t==='dark';return !!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)}
+  function run(){
+    if(busy||!dark()||document.hidden) return;
+    if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var txt=el.textContent;if(txt!=='Colizy') return;
+    busy=true;var n=txt.length,start=Date.now();
+    var iv=setInterval(function(){
+      var t=Date.now()-start,out='',done=true;
+      for(var i=0;i<n;i++){
+        var settle=350+i*170;
+        if(t>=settle) out+=txt[i]; else {done=false;out+=CH[(Math.random()*CH.length)|0]}
+      }
+      el.textContent=out;
+      if(done){clearInterval(iv);el.textContent=txt;busy=false}
+    },55);
+  }
+  el.addEventListener('click',run);
+  setTimeout(run,500);
+  setInterval(run,15000);
+})();
 /* Pluie Matrix (thème sombre) */
 (function(){
   var cv=document.getElementById('rain');if(!cv||!cv.getContext) return;
