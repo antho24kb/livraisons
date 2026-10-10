@@ -250,6 +250,16 @@ a.cl:active{filter:brightness(.92)}
 :root[data-theme="dark"] h1{text-shadow:0 0 14px rgba(0,255,65,.45)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .fab,:root:not([data-theme="light"]) .auth-card img{box-shadow:0 0 24px rgba(0,255,65,.45)}:root:not([data-theme="light"]) h1{text-shadow:0 0 14px rgba(0,255,65,.45)}}
 .auth{background:radial-gradient(120% 60% at 50% 0%,color-mix(in srgb,var(--accent) 20%,transparent),transparent 70%),var(--bg)}
+
+/* ===== Retard : ton doux, pas alarmant ===== */
+:root,:root[data-theme="light"]{--late:#A8620A;--late-tint:#FFF1DC}
+:root[data-theme="dark"]{--late:#FFB454;--late-tint:#2B2010}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--late:#FFB454;--late-tint:#2B2010}}
+.alert{background:none;border:0;border-radius:0;padding:0;color:var(--muted);font-weight:500;font-size:.92rem;display:flex;align-items:center;gap:8px}
+.alert::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--late);flex:none}
+.row.late,:root[data-theme="dark"] .row.late{box-shadow:var(--card-sh)}
+.group-h.late{color:var(--ink)}
+.row.late .when.late{font-weight:600}
 </style>
 </head>
 <body>
@@ -450,7 +460,7 @@ function renderSummary(){
   var p=pending();
   var lateN=p.filter(function(i){return diff(i.date)<0}).length;
   var todayN=p.filter(function(i){return diff(i.date)===0}).length;
-  el.innerHTML=(lateN?'<p class="alert">'+lateN+' livraison'+(lateN>1?'s':'')+' en retard : vérifie le suivi ou contacte la boutique.</p>':'')
+  el.innerHTML=(lateN?'<p class="alert">'+lateN+' livraison'+(lateN>1?'s':'')+' en retard : vérifie le suivi.</p>':'')
     +(todayN?'<p class="note" style="margin-top:8px">'+todayN+' attendue'+(todayN>1?'s':'')+" aujourd'hui.</p>":'');
 }
 function renderNav(){
