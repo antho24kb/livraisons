@@ -213,7 +213,7 @@ label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:u
       </div>
       <div class="field">
         <label for="f-suivi">N° de suivi</label>
-        <input type="text" id="f-suivi" name="suivi" placeholder="Optionnel" autocapitalize="characters">
+        <input type="text" id="f-suivi" name="suivi" placeholder="Ex : 6A12345678901" autocapitalize="characters" required>
       </div>
     </div>
     <div id="msg" role="status" aria-live="polite"></div>
@@ -285,8 +285,9 @@ function trackUrl(it){
   var c=CARRIERS[it.transporteur||''];
   if(it.transporteur==='amazon') return 'https://www.amazon.fr/gp/css/order-history';
   if(it.transporteur==='vintedgo') return 'https://www.vinted.fr/inbox';
-  if(!c||!c.u||!it.suivi) return null;
-  return c.u+encodeURIComponent(it.suivi);
+  if(!it.suivi) return null;
+  var base=(c&&c.u)||CARRIERS.autre.u;
+  return base+encodeURIComponent(it.suivi);
 }
 function toast(text){
   var t=$('toast');t.textContent=text;t.hidden=false;
@@ -473,6 +474,7 @@ $('form').addEventListener('submit',function(e){
   var prix=parsePrice(f.elements.prix.value);
   if(!article){msg("Indique le nom de l'article.");f.elements.article.focus();return}
   if(!date){msg('Choisis la date de livraison prévue.');f.elements.date.focus();return}
+  if(!f.elements.suivi.value.trim()){msg('Indique le numéro de suivi : il sert à suivre ta commande.');f.elements.suivi.focus();return}
   if(prix!==prix){msg('Le prix doit être un nombre, par exemple 29,99.');f.elements.prix.focus();return}
   var base={article:article,boutique:f.elements.boutique.value.trim(),date:date,prix:prix,transporteur:f.elements.transporteur.value,suivi:f.elements.suivi.value.trim()};
   var wasEdit=editId;
