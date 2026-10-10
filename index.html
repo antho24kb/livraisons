@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 <style>
 :root{
   --bg:#EDEFF3; --surface:#FFFFFF; --ink:#12161E; --muted:#596273; --line:#D9DDE5;
@@ -240,6 +241,7 @@ input[type=email],input[type=password]{font:inherit;font-size:16px;color:var(--i
     <div class="field"><label for="a-email">E-mail</label><input type="email" id="a-email" autocomplete="email" required></div>
     <div class="field"><label for="a-pass">Mot de passe</label><input type="password" id="a-pass" autocomplete="current-password" minlength="6" required></div>
     <button type="submit" class="btn primary" id="a-submit">Se connecter</button>
+    <div id="captcha" style="display:flex;justify-content:center"></div>
     <p class="auth-msg" id="auth-msg" role="status" aria-live="polite"></p>
     <button type="button" class="linkbtn" id="a-switch">Pas de compte ? Créer un compte</button>
     <button type="button" class="linkbtn" id="a-forgot">Mot de passe oublié ?</button>
@@ -437,7 +439,14 @@ function render(){
 /* Stockage : Supabase */
 var SUPABASE_URL='https://wxmlrnocxrshtlczvpgr.supabase.co';
 var SUPABASE_KEY='sb_publishable_OaoSIOOYM9_sNsJWtuGc8Q_8U5TDplA';
-var sb=null,user=null;
+var TURNSTILE_KEY='';
+var sb=null,user=null,captchaToken=null,captchaId=null;
+function setupCaptcha(tries){
+  if(!TURNSTILE_KEY) return;
+  if(window.turnstile){captchaId=window.turnstile.render('#captcha',{sitekey:TURNSTILE_KEY,language:'fr',callback:function(t){captchaToken=t},'expired-callback':function(){captchaToken=null},'error-callback':function(){captchaToken=null}});return}
+  if((tries||0)<40) setTimeout(function(){setupCaptcha((tries||0)+1)},250);
+}
+function resetCaptcha(){captchaToken=null;if(captchaId!==null&&window.turnstile){try{window.turnstile.reset(captchaId)}catch(e){}}}
 function fromRow(r){return {id:r.id,article:r.article,boutique:r.boutique||'',date:r.date_prevue,prix:r.prix==null?null:Number(r.prix),transporteur:r.transporteur||'',suivi:r.suivi||'',statut:r.statut||'commande',recu:!!r.recu,recuLe:r.recu_le||null,evenement:r.dernier_evenement||''}}
 var MAP={article:'article',boutique:'boutique',date:'date_prevue',prix:'prix',transporteur:'transporteur',suivi:'suivi',statut:'statut',recu:'recu',recuLe:'recu_le'};
 function toRow(o){var r={};Object.keys(o).forEach(function(k){if(MAP[k]) r[MAP[k]]=(o[k]===''?null:o[k])});if('suivi' in r&&r.suivi===null) r.suivi='';return r}
@@ -559,7 +568,7 @@ $('a-switch').addEventListener('click',function(){setSignup(!signup)});
 $('a-forgot').addEventListener('click',function(){
   var em=$('a-email').value.trim();
   if(!em){amsg("Saisis ton e-mail d'abord.",'err');return}
-  sb.auth.resetPasswordForEmail(em,{redirectTo:location.href.split('#')[0]}).then(function(r){
+  sb.auth.resetPasswordForEmail(em,{redirectTo:location.href.split('#')[0],captchaToken:captchaToken||undefined}).then(function(r){
     if(r.error) amsg(frErr(r.error),'err'); else amsg('E-mail envoyé : ouvre le lien pour changer ton mot de passe.','ok');
   });
 });
@@ -567,9 +576,11 @@ $('auth-form').addEventListener('submit',function(e){
   e.preventDefault();
   if(!sb){return}
   var em=$('a-email').value.trim(),pw=$('a-pass').value;
+  if(TURNSTILE_KEY&&!captchaToken){amsg('Patiente une seconde : la vérification anti-robots se termine.','err');return}
   amsg('Un instant…');
-  var p=signup?sb.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.href.split('#')[0]}}):sb.auth.signInWithPassword({email:em,password:pw});
+  var p=signup?sb.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.href.split('#')[0],captchaToken:captchaToken||undefined}}):sb.auth.signInWithPassword({email:em,password:pw,options:{captchaToken:captchaToken||undefined}});
   p.then(function(r){
+    resetCaptcha();
     if(r.error){amsg(frErr(r.error),'err');return}
     if(signup&&!r.data.session){amsg('Compte créé. Confirme ton e-mail (lien reçu), puis connecte-toi.','ok');setSignup(false);return}
     amsg('');
@@ -594,6 +605,7 @@ function init(){
   render();
   if(!window.supabase){$('auth-sub').textContent="Connexion indisponible : vérifie ta connexion internet puis recharge.";return}
   sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  setupCaptcha(0);
   sb.auth.onAuthStateChange(function(ev,session){setTimeout(function(){onSession(session)},0)});
   sb.auth.getSession().then(function(r){onSession(r.data.session)});
 }
