@@ -338,7 +338,7 @@ function renderSummary(){
   el.innerHTML='<div class="hero"><p class="eyebrow">Prochaine livraison</p>'
     +'<p class="next-name">'+esc(n.article)+'</p>'
     +'<p class="next-when">'+esc(cap(fLong.format(parseDay(n.date))))+' · '+rel(d)+'</p>'
-    +'<p class="totals">'+p.length+' en attente · '+eur.format(sum(p))+'</p></div>'
+    +'<p class="totals">'+p.length+' en attente</p></div>'
     +(lateN?'<p class="alert" style="margin-top:10px">'+lateN+' livraison'+(lateN>1?'s':'')+' en retard : vérifie le suivi ou contacte la boutique.</p>':'')
     +(todayN?'<p class="note" style="margin-top:8px">'+todayN+' attendue'+(todayN>1?'s':'')+" aujourd'hui.</p>":'');
 }
@@ -426,7 +426,7 @@ function renderList(){
   } else if(tab==='recues'){
     var r=received();
     if(!r.length){el.innerHTML='<div class="empty-box"><strong>Rien de reçu pour l\'instant.</strong><br>Les livraisons marquées « Reçu » arrivent ici.</div>';return}
-    el.innerHTML='<p class="note">'+r.length+' reçue'+(r.length>1?'s':'')+' · '+eur.format(sum(r))+'</p><section class="group"><ul class="rows">'+r.map(rowHtml).join('')+'</ul></section>';
+    el.innerHTML='<p class="note">'+r.length+' reçue'+(r.length>1?'s':'')+'</p><section class="group"><ul class="rows">'+r.map(rowHtml).join('')+'</ul></section>';
   } else {
     var all=items.filter(matches).sort(byDate);
     if(!all.length){el.innerHTML='<div class="empty-box">'+(query?'<strong>Aucun résultat.</strong><br>Essaie un autre mot.':'Tape un nom d\'article, une boutique ou un numéro de suivi.')+'</div>';return}
