@@ -237,6 +237,8 @@ a.cl:active{filter:brightness(.92)}
 .ev{margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .prog-l span{display:none}
 .prog-l{justify-content:flex-start}
+
+.eta{margin-top:3px;font-weight:600;font-size:.92rem;color:var(--accent)}
 </style>
 </head>
 <body>
@@ -469,6 +471,16 @@ function chip(label,dom){
   var img=dom?'<img class="lg" alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(dom)+'&sz=64" onerror="this.remove()">':'';
   return '<span class="chip">'+img+esc(label)+'</span>';
 }
+function etaHtml(it){
+  if(it.recu||!it.estimee) return '';
+  var m=/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}):(\d{2}))?/.exec(String(it.estimee));
+  if(!m) return '';
+  var d0=diff(m[1]),jour=d0===0?"aujourd'hui":(d0===1?'demain':(d0<0?'':'le '+noDot(fShort.format(parseDay(m[1])))));
+  var h0=(m[2]&&!(m[2]==='00'&&m[3]==='00')&&!(m[2]==='23'&&m[3]==='59'))?(m[2]+'h'+(m[3]==='00'?'':m[3])):'';
+  if(d0<0&&!h0) return '';
+  var t=(d0<0?'Prévue ':'Livraison estimée ')+jour+(h0?(' vers '+h0):'');
+  return '<div class="eta">'+esc(t.replace(/\s+/g,' ').trim())+'</div>';
+}
 function rowHtml(it){
   var id=esc(it.id),done=!!it.recu,d=diff(it.date);
   var st=done?'done':(d<0?'late':(d===0?'today':''));
@@ -514,6 +526,7 @@ function rowHtml(it){
     +'<div class="date" aria-hidden="true"><span class="w">'+esc(noDot(fWeek.format(dt)))+'</span><span class="d">'+dt.getDate()+'</span><span class="m">'+esc(noDot(fMonth.format(dt)))+'</span></div>'
     +'<div class="main"><div class="name">'+esc(it.article)+'</div><div class="meta">'+meta.join('')+'</div>'
     +'<div class="when '+(done?'':(d<0?'late':(d===0?'today':'')))+'" style="margin-top:4px">'+when+'</div>'
+    +etaHtml(it)
     +(it.evenement&&!done?'<div class="when ev">'+esc(String(it.evenement).split(' · ')[0])+'</div>':'')+'</div>'
     +'<div class="price'+(typeof it.prix==='number'?'':' none')+'">'+(typeof it.prix==='number'?eur.format(it.prix):'—')+'</div>'
     +(done?'':progressHtml(it))
@@ -554,7 +567,7 @@ function setupCaptcha(tries){
   if((tries||0)<40) setTimeout(function(){setupCaptcha((tries||0)+1)},250);
 }
 function resetCaptcha(){captchaToken=null;if(captchaId!==null&&window.turnstile){try{window.turnstile.reset(captchaId)}catch(e){}}}
-function fromRow(r){return {id:r.id,article:r.article,boutique:r.boutique||'',date:r.date_prevue,prix:r.prix==null?null:Number(r.prix),transporteur:r.transporteur||'',suivi:r.suivi||'',statut:r.statut||'commande',recu:!!r.recu,recuLe:r.recu_le||null,evenement:r.dernier_evenement||''}}
+function fromRow(r){return {id:r.id,article:r.article,boutique:r.boutique||'',date:r.date_prevue,prix:r.prix==null?null:Number(r.prix),transporteur:r.transporteur||'',suivi:r.suivi||'',statut:r.statut||'commande',recu:!!r.recu,recuLe:r.recu_le||null,evenement:r.dernier_evenement||'',estimee:r.livraison_estimee||''}}
 var MAP={article:'article',boutique:'boutique',date:'date_prevue',prix:'prix',transporteur:'transporteur',suivi:'suivi',statut:'statut',recu:'recu',recuLe:'recu_le'};
 function toRow(o){var r={};Object.keys(o).forEach(function(k){if(MAP[k]) r[MAP[k]]=(o[k]===''?null:o[k])});if('suivi' in r&&r.suivi===null) r.suivi='';return r}
 function fail(){toast("Enregistrement impossible. Vérifie ta connexion.")}

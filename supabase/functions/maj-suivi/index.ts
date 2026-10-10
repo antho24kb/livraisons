@@ -64,6 +64,8 @@ Deno.serve(async (req) => {
       const ev = t?.events?.[0];
       const patch: Record<string, unknown> = { derniere_maj: new Date().toISOString() };
       if (jalon && STATUT[jalon]) patch.statut = STATUT[jalon];
+      const estimee = t?.shipment?.delivery?.estimatedDeliveryDate ?? t?.shipment?.delivery?.courierEstimatedDeliveryDate;
+      if (estimee) patch.livraison_estimee = estimee;
       if (jalon === 'delivered') {
         patch.recu = true;
         patch.recu_le = (ev?.occurrenceDatetime ?? new Date().toISOString()).slice(0, 10);
