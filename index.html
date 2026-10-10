@@ -78,9 +78,6 @@ ul.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;ga
 .when.today{color:var(--accent);font-weight:600}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px 3px 6px;border-radius:5px;background:var(--tint);color:var(--muted)}
 .pill svg{width:14px;height:14px}
-.pill.t-film{background:var(--film-tint);color:var(--film)}
-.pill.t-steelbook{background:var(--steel-tint);color:var(--steel)}
-.pill.t-jeu{background:var(--game-tint);color:var(--game)}
 .price{font-variant-numeric:tabular-nums;font-weight:600;text-align:right;white-space:nowrap}
 .price.none{color:var(--muted);font-weight:400}
 .track{font-variant-numeric:tabular-nums}
@@ -137,13 +134,6 @@ input::placeholder{color:var(--muted);opacity:.8}
 .field{display:flex;flex-direction:column;gap:5px;min-width:0}
 .field.wide{grid-column:1/-1}
 label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.types{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.types label{position:relative;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:600;color:var(--ink)}
-.types input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
-.types span{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
-.types svg{width:26px;height:26px}
-.types input:checked + span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.types input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
 .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .chip{font-size:.85rem;font-weight:600;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;cursor:pointer}
 .chip:hover{background:var(--tint)}
@@ -197,14 +187,6 @@ label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:u
         <label for="f-article">Article</label>
         <input type="text" id="f-article" name="article" placeholder="Ex : Blade Runner 2049, steelbook 4K" required>
       </div>
-      <div class="field wide">
-        <span class="lbl" id="lbl-type">Type</span>
-        <div class="types" role="radiogroup" aria-labelledby="lbl-type">
-          <label><input type="radio" name="type" value="film" checked><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.6"/></svg>Film</span></label>
-          <label><input type="radio" name="type" value="steelbook"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8.5 3v18"/></svg>Steelbook</span></label>
-          <label><input type="radio" name="type" value="jeu"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M7 8h10a4 4 0 0 1 3.9 4.9l-.8 3.5a2.5 2.5 0 0 1-4.2 1.2L14 16h-4l-1.9 1.6a2.5 2.5 0 0 1-4.2-1.2l-.8-3.5A4 4 0 0 1 7 8z"/><path d="M8 10.5v3M6.5 12h3"/></svg>Jeu vidéo</span></label>
-        </div>
-      </div>
       <div class="field">
         <label for="f-boutique">Boutique</label>
         <input type="text" id="f-boutique" name="boutique" list="boutiques" placeholder="Ex : Fnac, Amazon">
@@ -243,12 +225,6 @@ label,.lbl{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:u
 <script>
 (function(){
 'use strict';
-var TYPES={film:'Film',steelbook:'Steelbook',jeu:'Jeu vidéo'};
-var ICONS={
-  film:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.6"/></svg>',
-  steelbook:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8.5 3v18"/></svg>',
-  jeu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="M7 8h10a4 4 0 0 1 3.9 4.9l-.8 3.5a2.5 2.5 0 0 1-4.2 1.2L14 16h-4l-1.9 1.6a2.5 2.5 0 0 1-4.2-1.2l-.8-3.5A4 4 0 0 1 7 8z"/></svg>'
-};
 var CARRIERS={
   '':{n:'—',u:null},
   colissimo:{n:'Colissimo / La Poste',u:'https://www.laposte.fr/outils/suivre-vos-envois?code='},
@@ -366,7 +342,6 @@ function rowHtml(it){
   var st=done?'done':(d<0?'late':(d===0?'today':''));
   var dt=parseDay(it.date);
   var meta=[];
-  if(TYPES[it.type]) meta.push('<span class="pill t-'+it.type+'">'+ICONS[it.type]+TYPES[it.type]+'</span>');
   var bits=[];
   if(it.boutique) bits.push(esc(it.boutique));
   var cn=(CARRIERS[it.transporteur||'']||{}).n;
@@ -472,8 +447,6 @@ function openSheet(it){
   f.elements.date.value=it?it.date:plusDays(3);
   f.elements.suivi.value=it?(it.suivi||''):'';
   f.elements.transporteur.value=it?(it.transporteur||''):'';
-  var t=it&&TYPES[it.type]?it.type:'film';
-  Array.prototype.forEach.call(f.elements.type,function(r){r.checked=(r.value===t)});
   msg('');updateHint();
   lastFocus=document.activeElement;
   $('overlay').hidden=false;
@@ -501,7 +474,7 @@ $('form').addEventListener('submit',function(e){
   if(!article){msg("Indique le nom de l'article.");f.elements.article.focus();return}
   if(!date){msg('Choisis la date de livraison prévue.');f.elements.date.focus();return}
   if(prix!==prix){msg('Le prix doit être un nombre, par exemple 29,99.');f.elements.prix.focus();return}
-  var base={article:article,boutique:f.elements.boutique.value.trim(),date:date,prix:prix,type:f.elements.type.value,transporteur:f.elements.transporteur.value,suivi:f.elements.suivi.value.trim()};
+  var base={article:article,boutique:f.elements.boutique.value.trim(),date:date,prix:prix,transporteur:f.elements.transporteur.value,suivi:f.elements.suivi.value.trim()};
   var wasEdit=editId;
   var p=wasEdit
     ? updateItem(wasEdit,base)
