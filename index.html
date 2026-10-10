@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#2848D6">
+<meta name="theme-color" content="#0A5CFF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Livraisons">
@@ -213,6 +213,19 @@ h1,.wrap>h1,.auth-card h1{text-transform:none;letter-spacing:-.03em;font-weight:
 .next-name{font-weight:700}
 .btn{font-weight:600;letter-spacing:-.01em}
 .prog-l b{letter-spacing:0}
+
+/* ===== Bleu vif + logos ===== */
+:root,:root[data-theme="light"]{--accent:#0A5CFF;--tint:#E8F0FF;--film:#0A5CFF}
+:root[data-theme="dark"]{--accent:#4D8DFF}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--accent:#4D8DFF}}
+.btn.primary,.fab{background:var(--accent)}
+.fab{box-shadow:0 8px 22px rgba(10,92,255,.42)}
+.auth-card img{box-shadow:0 10px 24px rgba(10,92,255,.35)}
+.meta{gap:6px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 4px;border-radius:999px;background:var(--bg);color:var(--ink);font-size:.8rem;font-weight:500;line-height:1.2}
+.chip:not(:has(img)){padding-left:10px}
+.chip .lg{width:18px;height:18px;border-radius:50%;background:#fff;object-fit:contain;flex:none}
+.track{font-size:.8rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -438,17 +451,24 @@ function progressHtml(it){
   return '<div class="prog" role="img" aria-label="Statut : '+STEPS[idx]+'"><div class="segs">'+segs+'</div>'
     +'<div class="prog-l"><b>'+STEPS[idx]+'</b><span>'+(idx<3?'Étape '+(idx+1)+' sur 4':'Terminé')+'</span></div></div>';
 }
+var SHOPS=[['fnac','fnac.com'],['amazon','amazon.fr'],['cdiscount','cdiscount.com'],['micromania','micromania.fr'],['vinted','vinted.fr'],['ebay','ebay.fr'],['leclerc','e.leclerc'],['carrefour','carrefour.fr'],['boulanger','boulanger.com'],['darty','darty.com'],['auchan','auchan.fr'],['zavvi','zavvi.com'],['gamestop','gamestop.fr'],['rakuten','fr.shopping.rakuten.com'],['cultura','cultura.com'],['steelbook','steelbook.fr']];
+var CDOM={colissimo:'laposte.fr',chronopost:'chronopost.fr',mondial:'mondialrelay.fr',ups:'ups.com',dhl:'dhl.com',fedex:'fedex.com',amazon:'amazon.fr',vintedgo:'vinted.fr'};
+function shopDom(n){n=(n||'').toLowerCase();for(var i=0;i<SHOPS.length;i++){if(n.indexOf(SHOPS[i][0])>-1) return SHOPS[i][1]}return ''}
+function chip(label,dom){
+  var img=dom?'<img class="lg" alt="" loading="lazy" src="https://www.google.com/s2/favicons?domain='+encodeURIComponent(dom)+'&sz=64" onerror="this.remove()">':'';
+  return '<span class="chip">'+img+esc(label)+'</span>';
+}
 function rowHtml(it){
   var id=esc(it.id),done=!!it.recu,d=diff(it.date);
   var st=done?'done':(d<0?'late':(d===0?'today':''));
   var dt=parseDay(it.date);
   var meta=[];
   var bits=[];
-  if(it.boutique) bits.push(esc(it.boutique));
+  if(it.boutique) bits.push(chip(it.boutique,shopDom(it.boutique)));
   var cn=(CARRIERS[it.transporteur||'']||{}).n;
-  if(it.transporteur&&cn) bits.push(esc(cn));
+  if(it.transporteur&&cn) bits.push(chip(cn,CDOM[it.transporteur]||''));
   if(it.suivi) bits.push('<span class="track">'+esc(it.suivi)+'</span>');
-  if(bits.length) meta.push('<span>'+bits.join(' · ')+'</span>');
+  if(bits.length) meta.push(bits.join(''));
   var when=done
     ? (it.recuLe?'Reçu le '+esc(noDot(fShort.format(parseDay(it.recuLe)))):'Reçu')
     : rel(d);
@@ -612,7 +632,7 @@ function applyTheme(t){
   var root=document.documentElement;
   if(t==='light'||t==='dark') root.setAttribute('data-theme',t); else root.removeAttribute('data-theme');
   var dark=(t==='dark')||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
-  var m=document.querySelector('meta[name="theme-color"]');if(m) m.setAttribute('content',dark?'#0F131A':'#2848D6');
+  var m=document.querySelector('meta[name="theme-color"]');if(m) m.setAttribute('content',dark?'#0F131A':'#0A5CFF');
 }
 function openSettings(){
   var t=effectiveTheme();
