@@ -17,6 +17,12 @@ const DEFAUT = {
   mail: false, alert_expedie: true, alert_livraison: true, alert_livre: true, alert_retard: true,
   silence_on: false,
 };
+// Mondial Relay : le n° d'expédition seul ne suffit pas, il faut le code postal de livraison.
+const CP_MONDIAL = '38530';
+const corpsSuivi = (r: { suivi: unknown; transporteur?: string | null }) => ({
+  trackingNumber: String(r.suivi).trim(),
+  ...(r.transporteur === 'mondial' ? { destinationPostCode: CP_MONDIAL } : {}),
+});
 const cle = (r: { recu: boolean; statut: string }) => (r.recu ? 'recu' : r.statut);
 const heureParis = () =>
   Number(new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
@@ -75,7 +81,7 @@ Deno.serve(async (req) => {
 
   // 1) rafraîchir le suivi : colis non reçus pas vérifiés depuis 3 h (max 20 par passage)
   const limite = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
-  const { data: aVerifier } = await sb.from('colis').select('id,suivi').eq('recu', false).neq('suivi', '')
+  const { data: aVerifier } = await sb.from('colis').select('id,suivi,transporteur').eq('recu', false).neq('suivi', '')
     .or(`derniere_maj.is.null,derniere_maj.lt.${limite}`)
     .order('derniere_maj', { ascending: true, nullsFirst: true }).limit(20);
   for (const r of aVerifier ?? []) {
@@ -83,7 +89,7 @@ Deno.serve(async (req) => {
       const res = await fetch('https://api.ship24.com/public/v1/trackers/track', {
         method: 'POST',
         headers: { Authorization: `Bearer ${ship}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackingNumber: String(r.suivi).trim() }),
+        body: JSON.stringify(corpsSuivi(r)),
         signal: AbortSignal.timeout(25000),
       });
       if (!res.ok) continue;

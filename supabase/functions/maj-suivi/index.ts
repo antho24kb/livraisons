@@ -22,6 +22,12 @@ const STATUT: Record<string, string> = {
 };
 const DELAI_MS = 3 * 3600 * 1000; // pas plus d'un appel toutes les 3 h par colis
 const MAX_PAR_APPEL = 5;
+// Mondial Relay : le n° d'expédition seul ne suffit pas, il faut le code postal de livraison.
+const CP_MONDIAL = '38530';
+const corpsSuivi = (r: { suivi: unknown; transporteur?: string | null }) => ({
+  trackingNumber: String(r.suivi).trim(),
+  ...(r.transporteur === 'mondial' ? { destinationPostCode: CP_MONDIAL } : {}),
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -37,7 +43,7 @@ Deno.serve(async (req) => {
 
   const { data: rows, error } = await sb
     .from('colis')
-    .select('id,suivi,derniere_maj')
+    .select('id,suivi,transporteur,derniere_maj')
     .eq('recu', false)
     .neq('suivi', '');
   if (error) return json({ error: error.message }, 500);
@@ -50,11 +56,11 @@ Deno.serve(async (req) => {
   let maj = 0;
   await Promise.all(dus.map(async (r) => {
     try {
-      // Le corps ne contient QUE le numéro : un corps identique réutilise le même suivi chez Ship24.
+      // Le corps ne contient que le numéro (+ code postal pour Mondial Relay) : un corps identique réutilise le même suivi chez Ship24.
       const res = await fetch('https://api.ship24.com/public/v1/trackers/track', {
         method: 'POST',
         headers: { Authorization: `Bearer ${cle}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trackingNumber: String(r.suivi).trim() }),
+        body: JSON.stringify(corpsSuivi(r)),
         signal: AbortSignal.timeout(25000),
       });
       if (!res.ok) return;
