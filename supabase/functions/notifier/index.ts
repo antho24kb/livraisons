@@ -17,6 +17,7 @@ const DEFAUT = {
   mail: false, alert_expedie: true, alert_livraison: true, alert_livre: true, alert_retard: true,
   silence_on: false,
 };
+const RANG: Record<string, number> = { commande: 0, expedie: 1, livraison: 2 };
 // Mondial Relay : le n° d'expédition seul ne suffit pas, il faut le code postal de livraison.
 const CP_MONDIAL = '38530';
 const corpsSuivi = (r: { suivi: unknown; transporteur?: string | null }) => ({
@@ -81,7 +82,7 @@ Deno.serve(async (req) => {
 
   // 1) rafraîchir le suivi : colis non reçus pas vérifiés depuis 3 h (max 20 par passage)
   const limite = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
-  const { data: aVerifier } = await sb.from('colis').select('id,suivi,transporteur').eq('recu', false).neq('suivi', '')
+  const { data: aVerifier } = await sb.from('colis').select('id,suivi,transporteur,statut').eq('recu', false).neq('suivi', '')
     .or(`derniere_maj.is.null,derniere_maj.lt.${limite}`)
     .order('derniere_maj', { ascending: true, nullsFirst: true }).limit(20);
   for (const r of aVerifier ?? []) {
@@ -97,7 +98,8 @@ Deno.serve(async (req) => {
       const jalon: string | undefined = t?.shipment?.statusMilestone;
       const ev = t?.events?.[0];
       const patch: Record<string, unknown> = { derniere_maj: new Date().toISOString() };
-      if (jalon && STATUT[jalon]) patch.statut = STATUT[jalon];
+      // le statut ne recule jamais (Ship24 peut renvoyer une info moins avancée d'un contrôle à l'autre)
+      if (jalon && STATUT[jalon] && (RANG[STATUT[jalon]] ?? 0) >= (RANG[r.statut] ?? 0)) patch.statut = STATUT[jalon];
       const estimee = t?.shipment?.delivery?.estimatedDeliveryDate ?? t?.shipment?.delivery?.courierEstimatedDeliveryDate;
       if (estimee) patch.livraison_estimee = estimee;
       if (jalon === 'delivered') {
